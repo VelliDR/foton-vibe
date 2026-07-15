@@ -58,6 +58,9 @@ function switchTab(targetTabId) {
 
     if (targetTabId === 'fikir') {
         updateVibeUI();
+        if (targetTabId === 'hesaplama') {
+        handleExposureCalculation();
+    }
     }
 }
 
@@ -297,6 +300,8 @@ function handleExposureCalculation() {
     const pitch = calculatePixelPitch(sensorType, megapixels);
     const t = calculateNpfAdvanced(focal, aperture, pitch, declination);
     const warnings = evaluateOptics(focal, aperture);
+    
+    // Gelişmiş reçete motorunu çağırıyoruz
     const recipe = calculateSensorRecipe(t, aperture, state.bortle);
 
     const npfOut = document.getElementById('output-npf');
@@ -310,6 +315,22 @@ function handleExposureCalculation() {
     const warningsContainer = document.getElementById('output-warnings');
     if (warningsContainer) {
         warningsContainer.innerHTML = "";
+        
+        // Bilgi Etiketi: Hesaplamada kullanılan güncel Bortle durumunu ekrana basıyoruz
+        const pBortle = document.createElement('p');
+        pBortle.className = "text-[10px] text-m3RedMuted/70 font-mono not-italic border-b border-m3Border/30 pb-2 mb-2";
+        pBortle.innerText = `ℹ️ Hesaplama Parametresi: Bortle ${state.bortle} (Panel sekmesinden güncellenir)`;
+        warningsContainer.appendChild(pBortle);
+
+        // Aşırı Pozlama Uyarısı
+        if (recipe.overexposed) {
+            const pOver = document.createElement('p');
+            pOver.className = "text-[10px] text-amber-500 font-bold leading-relaxed";
+            pOver.innerText = `⚠️ AŞIRI POZLAMA KORUMASI: Bu ışık kirliliğinde ${t.toFixed(2)}s tek kare pozlama sensörü patlatacaktır. Toplam süreyi ${recipe.stack} kareye böldük (Kare başına ${recipe.frameTime.toFixed(1)}s pozlayın).`;
+            warningsContainer.appendChild(pOver);
+        }
+
+        // Diğer optik uyarıları ekle
         warnings.forEach(warn => {
             const p = document.createElement('p');
             p.innerText = warn;

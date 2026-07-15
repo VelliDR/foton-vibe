@@ -87,33 +87,42 @@ export function calculateSensorRecipe(t, aperture, bortle) {
     const b = parseInt(bortle);
 
     if (isNaN(time) || time <= 0 || isNaN(n) || n <= 0 || isNaN(b) || b <= 0) {
-        return { iso: 800, stack: 1 };
+        return { iso: 800, stack: 1, frameTime: time, overexposed: false };
     }
 
     const bortle_factor = Math.pow(b, 0.7);
     
-    // Işık kirliliği ve diyaframa göre ham ISO tahmini
+    // Işık kirliliği ve diyaframa göre ham ISO hesabı
     const raw_iso = (5000 * Math.pow(n, 2)) / (time * bortle_factor);
-
-    // Genişletilmiş Standart ISO Listesi (ISO 100 ve 200 eklendi)
     const standardIsos = [100, 200, 400, 800, 1600, 3200, 6400];
     
-    // Hesaplanan ISO'ya en yakın standart değeri buluyoruz
     let ideal_iso = standardIsos.reduce((prev, curr) => {
         return Math.abs(curr - raw_iso) < Math.abs(prev - raw_iso) ? curr : prev;
     });
 
     let stack_frames = 1;
-    
-    // Eğer ideal ISO güvenli sınırı (1600) aşarsa, dijital kumlanmayı önlemek için istifleme öneriyoruz
+    let frameTime = time;
+    let overexposed = false;
+
     if (ideal_iso > SAFE_LIMIT_ISO) {
+        // Yüksek ISO Kumlanma Koruması (Mevcut mantık)
         const stop_difference = Math.log2(ideal_iso / SAFE_LIMIT_ISO);
         stack_frames = Math.ceil(Math.pow(2, stop_difference));
         ideal_iso = SAFE_LIMIT_ISO;
+    } else if (raw_iso < 100) {
+        // GERÇEKÇİ ŞEHİR KORUMASI: Eğer gereken ISO 100'ün altındaysa sensör patlar.
+        // Toplam süreyi (t) bölüp istifleyerek aşırı pozlamayı engelliyoruz.
+        const overexposure_factor = 100 / raw_iso;
+        stack_frames = Math.ceil(overexposure_factor);
+        ideal_iso = 100;
+        frameTime = time / stack_frames;
+        overexposed = true;
     }
 
     return {
         iso: ideal_iso,
-        stack: stack_frames
+        stack: stack_frames,
+        frameTime: frameTime,
+        overexposed: overexposed
     };
 }
