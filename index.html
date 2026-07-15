@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#FF8A80">
     <title>Foton Vibe</title>
-    <link rel="manifest" href="manifest.json">
+    <link class="manifest" href="manifest.json">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -72,6 +72,7 @@
         <div class="p-4 flex-1 flex flex-col justify-start gap-4">
 
             <section id="tab-dashboard" class="space-y-4">
+                
                 <div class="bg-m3Surface p-4 rounded-2xl border border-m3Border">
                     <h2 class="text-xs font-semibold uppercase tracking-wider mb-3 text-m3RedMuted">📍 Hedef Konum Ayarı</h2>
                     <div class="space-y-3">
@@ -85,7 +86,18 @@
                                 <input type="number" id="input-lon" value="32.8500" step="0.0001" class="w-full bg-m3Bg border border-m3Border rounded-xl p-2 text-xs text-m3Red font-mono focus:outline-none focus:border-m3Red">
                             </div>
                         </div>
-                        <div class="flex gap-2">
+
+                        <div>
+                            <label class="text-[9px] block text-m3RedMuted/60 mb-1">ÇEVRESEL YAPAY IŞIK SEVİYESİ</label>
+                            <select id="select-environment" class="w-full bg-m3Bg border border-m3Border rounded-xl p-2 text-xs text-m3Red font-mono focus:outline-none focus:border-m3Red">
+                                <option value="1">Zifiri Karanlık / Dağ Başı (Bortle 1-2)</option>
+                                <option value="3" selected>Kırsal Bölge / Köy (Bortle 3-4)</option>
+                                <option value="5">Kasaba / Küçük Şehir (Bortle 5-6)</option>
+                                <option value="7">Büyük Şehir Merkezi (Bortle 7-9)</option>
+                            </select>
+                        </div>
+
+                        <div class="flex gap-2 pt-1">
                             <button id="btn-location-gps" class="flex-1 bg-m3RedDark border border-m3Border hover:bg-red-950/30 py-2 rounded-xl text-xs font-semibold tracking-wider transition-colors">
                                 🛰️ GPS İle Al
                             </button>
@@ -115,7 +127,7 @@
                             <span class="text-[10px] block text-m3RedMuted/60">BULUTLULUK</span>
                             <span class="text-sm font-semibold" id="cloud-status">--</span>
                         </div>
-                        <div class="border-r border-m3Border pr-2 pt-2 border-t border-m3Border col-span-2">
+                        <div class="pr-2 pt-2 border-t border-m3Border col-span-2">
                             <span class="text-[10px] block text-m3RedMuted/60">IŞIK KİRLİLİĞİ (BORTLE)</span>
                             <span class="text-sm font-semibold" id="bortle-value">Hesaplanıyor...</span>
                         </div>

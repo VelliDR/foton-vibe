@@ -12,7 +12,8 @@ export const state = {
         lat: 39.9333,
         lon: 32.8500
     },
-    bortle: 4,
+    baseBortle: 3, // Başlangıç taban ışık kirliliği
+    bortle: 4,     // Dinamik (Ay etkisi dahil) nihai Bortle skoru
     gpsLocked: false
 };
 
@@ -23,7 +24,6 @@ const TAB_TITLES = {
     rota: 'ROTA KEŞİF DEDEKTÖRÜ'
 };
 
-// Dinamik sekme listesi (DRY Prensibi)
 const TABS = Object.keys(TAB_TITLES);
 
 // ==========================================
@@ -93,7 +93,7 @@ async function updateAstronomicalUI() {
     }
 
     // Bortle Tahmini Güncelleme
-    const bortleResult = estimateBortleOffline(state.coords.lat, state.coords.lon, today);
+    const bortleResult = estimateBortleOffline(state.coords.lat, state.coords.lon, today, state.baseBortle);
     state.bortle = bortleResult.score;
 
     const bortleElem = document.getElementById('bortle-value');
@@ -227,7 +227,6 @@ async function handleRouteSearch() {
             const div = document.createElement('div');
             div.className = "bg-m3Surface p-3 rounded-xl border border-m3Border text-xs space-y-1 mb-2";
             
-            // XSS koruması için textContent kullanımı
             const headerDiv = document.createElement('div');
             headerDiv.className = "flex justify-between font-bold";
             
@@ -338,6 +337,12 @@ function initEventListeners() {
         if (el) el.addEventListener(event, fn);
     };
 
+    // Yapay ışık seçimi değiştiğinde taban kirliliği güncelle
+    bindInput('select-environment', 'change', (e) => {
+        state.baseBortle = parseInt(e.target.value);
+        updateAstronomicalUI();
+    });
+
     bindClick('btn-location-gps', requestLocation);
     bindClick('btn-location-apply', applyManualCoordinates);
     bindClick('btn-calc-exposure', handleExposureCalculation);
@@ -349,23 +354,28 @@ function initEventListeners() {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
+    // HTML'deki seçili çevresel ışık seviyesini başlangıç durumuna senkronize et
+    const envElem = document.getElementById('select-environment');
+    if (envElem) {
+        state.baseBortle = parseInt(envElem.value);
+    }
+
     initEventListeners();
     applyManualCoordinates(); 
     updateCalculatedPitchUI();
 
-   // js/app.js dosyasının en altındaki Service Worker bloğunu bununla değiştir:
-if ('serviceWorker' in navigator) {
     // Dinamik ve hatasız alt dizin (Subdirectory) uyumlu SW kayıt yolu bulucu
-    let swPath = window.location.pathname;
-    if (!swPath.endsWith('/') && !swPath.includes('.')) {
-        swPath += '/';
-    } else {
-        swPath = swPath.substring(0, swPath.lastIndexOf('/') + 1);
-    }
-    const swUrl = `${swPath}service-worker.js`;
+    if ('serviceWorker' in navigator) {
+        let swPath = window.location.pathname;
+        if (!swPath.endsWith('/') && !swPath.includes('.')) {
+            swPath += '/';
+        } else {
+            swPath = swPath.substring(0, swPath.lastIndexOf('/') + 1);
+        }
+        const swUrl = `${swPath}service-worker.js`;
 
-    navigator.serviceWorker.register(swUrl)
-        .then((reg) => console.log('✅ Service Worker başarıyla kaydedildi. Kapsam:', reg.scope))
-        .catch((err) => console.warn('❌ Service Worker kaydı başarısız:', err));
-}
+        navigator.serviceWorker.register(swUrl)
+            .then((reg) => console.log('✅ Service Worker başarıyla kaydedildi. Kapsam:', reg.scope))
+            .catch((err) => console.warn('❌ Service Worker kaydı başarısız:', err));
+    }
 });
