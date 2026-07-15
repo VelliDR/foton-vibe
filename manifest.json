@@ -1,14 +1,14 @@
 {
   "short_name": "Foton Vibe",
-  "name": "Foton Vibe - Fotoğrafçı Asistanı",
+  "name": "Foton Vibe Astrofotografi Asistanı",
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "./icon-192.png",
       "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "icon-512.png",
+      "src": "./icon-512.png",
       "type": "image/png",
       "sizes": "512x512"
     }
