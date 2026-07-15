@@ -98,16 +98,22 @@ async function updateAstronomicalUI() {
 // ==========================================
 // 4. KONUM VE KOORDİNAT YÖNETİMİ
 // ==========================================
+// ==========================================
+// 4. KONUM VE KOORDİNAT YÖNETİMİ (GÜNCELLENDİ)
+// ==========================================
 function requestLocation() {
     const statusText = document.getElementById('gps-status');
     const gpsDot = document.getElementById('gps-dot');
 
     if (!navigator.geolocation) {
         statusText.innerText = "GPS Yok";
+        gpsDot.className = "w-2 h-2 rounded-full bg-red-800";
         return;
     }
 
     statusText.innerText = "Aranıyor...";
+    gpsDot.className = "w-2 h-2 rounded-full bg-amber-600 animate-pulse";
+
     navigator.geolocation.getCurrentPosition(
         (position) => {
             state.coords.lat = position.coords.latitude;
@@ -123,13 +129,24 @@ function requestLocation() {
 
             updateAstronomicalUI();
         },
-        () => {
-            statusText.innerText = "HTTP Engeli";
+        (error) => {
+            // Hatanın gerçek nedenini ekrana yazıyoruz ki görebilelim
+            let errorMsg = "GPS Hatası";
+            if (error.code === error.PERMISSION_DENIED) {
+                errorMsg = "İzin Reddedildi";
+            } else if (error.code === error.POSITION_UNAVAILABLE) {
+                errorMsg = "Sinyal Yok / Kapalı";
+            } else if (error.code === error.TIMEOUT) {
+                errorMsg = "Zaman Aşımı";
+            }
+
+            statusText.innerText = errorMsg;
             gpsDot.className = "w-2 h-2 rounded-full bg-red-800";
-            // Hata durumunda mevcut manuel değerlerle hesaplamayı sürdür
-            applyManualCoordinates();
+            
+            console.warn("GPS Hatası Detayı:", error);
+            // applyManualCoordinates(); <-- Bu satırı sildik! Hata durumunda hemen manuele sıfırlamasın.
         },
-        { enableHighAccuracy: true, timeout: 8000 }
+        { enableHighAccuracy: true, timeout: 10000 }
     );
 }
 // Overpass Rota Keşif İşleyicisi
