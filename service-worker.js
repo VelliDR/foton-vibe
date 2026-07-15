@@ -3,7 +3,7 @@
  */
 
 // Sürüm her değiştiğinde tarayıcı eski önbelleği silip yenisini kurar
-const CACHE_NAME = 'foton-vibe-v1.2';
+const CACHE_NAME = 'foton-vibe-v1.3';
 
 const ASSETS_TO_CACHE = [
   './',                  // KÖK DİZİN: Çevrimdışı açılış için en kritik satır!
