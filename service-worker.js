@@ -2,8 +2,8 @@
  * SERVICE-WORKER.JS - Çevrimdışı Çalışma ve Önbellek Yönetim Motoru
  */
 
-// Sürüm her değiştiğinde tarayıcı eski önbelleği silip yenisini kurar
-const CACHE_NAME = 'foton-vibe-v1.3';
+// Sürüm yapay ışık ve hibrit Bortle kalibrasyonu için v1.4'e yükseltildi
+const CACHE_NAME = 'foton-vibe-v1.4';
 
 const ASSETS_TO_CACHE = [
   './',                  // KÖK DİZİN: Çevrimdışı açılış için en kritik satır!
@@ -14,8 +14,9 @@ const ASSETS_TO_CACHE = [
   './js/vibe.js',
   './js/api.js',
   './manifest.json',
-  './icon-192.png',      // İkonların sunucuda mevcut olduğundan emin olmalısın
-  './icon-512.png'
+  './icon-192.png',
+  './icon-512.png',
+  'https://cdn.tailwindcss.com' // Çevrimdışıyken tasarımın çökmemesi için CDN önbelleğe dahil edildi
 ];
 
 // 1. Kurulum (Install): Dosyaları Önbelleğe Al
@@ -27,7 +28,6 @@ self.addEventListener('install', (event) => {
         return cache.addAll(ASSETS_TO_CACHE);
       })
       .then(() => {
-        // Yeni güncellenmiş kodların anında aktif olması için bekleme sürecini atla
         return self.skipWaiting();
       })
       .catch((err) => {
@@ -49,7 +49,6 @@ self.addEventListener('activate', (event) => {
         })
       );
     }).then(() => {
-      // Servis işçisinin kontrolü anında devralmasını sağla (Sekme kapatma zorunluluğu kalkar)
       return self.clients.claim();
     })
   );
@@ -57,8 +56,11 @@ self.addEventListener('activate', (event) => {
 
 // 3. İstek Yakalama (Fetch): Önce Önbelleğe Bak, Yoksa Ağa Git
 self.addEventListener('fetch', (event) => {
-    // Sadece yerel GET isteklerini önbellekten oku (Harici API'ler muaf)
-    if (event.request.method !== 'GET' || !event.request.url.startsWith(self.location.origin)) {
+    const isLocal = event.request.url.startsWith(self.location.origin);
+    const isTailwindCDN = event.request.url.startsWith('https://cdn.tailwindcss.com');
+
+    // Sadece yerel GET isteklerini ve güvenli Tailwind CDN'ini önbellekten oku
+    if (event.request.method !== 'GET' || (!isLocal && !isTailwindCDN)) {
         return;
     }
 
@@ -69,12 +71,10 @@ self.addEventListener('fetch', (event) => {
             }
             
             return fetch(event.request).catch((err) => {
-                // Güvenli kontrol: acceptHeader null ise çökmesini engelle
                 const acceptHeader = event.request.headers.get('accept');
                 if (acceptHeader && acceptHeader.includes('text/html')) {
                     return caches.match('./index.html');
                 }
-                // HTML dışındaki başarısızlıkları tarayıcıya doğal yolla fırlat, SW'yi kilitleme
                 throw err;
             });
         })
