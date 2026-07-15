@@ -9,13 +9,62 @@ const OVERPASS_INSTANCES = [
     'https://overpass.openstreetmap.ru/api/interpreter'
 ];
 
+// Dereceyi radyana çeviren yardımcı fonksiyon
+const toRad = (value) => (value * Math.PI) / 180;
+
+/**
+ * Belirlenen süre içinde yanıt vermeyen istekleri iptal eden güvenli fetch fonksiyonu
+ */
+async function fetchWithTimeout(resource, options = {}) {
+    const { timeout = 8000 } = options; // Varsayılan 8 saniye zaman aşımı
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+
+    try {
+        const response = await fetch(resource, {
+            ...options,
+            signal: controller.signal
+        });
+        clearTimeout(id);
+        return response;
+    } catch (error) {
+        clearTimeout(id);
+        throw error;
+    }
+}
+
+/**
+ * LocalStorage dolduğunda eski önbellekleri temizleyip güvenle yazan fonksiyon
+ */
+function safeSetLocalStorage(key, data) {
+    try {
+        localStorage.setItem(key, JSON.stringify(data));
+    } catch (error) {
+        if (error.name === 'QuotaExceededError') {
+            console.warn("⚠️ LocalStorage limiti aşıldı! Eski foton_spots önbellekleri temizleniyor...");
+            // Sadece bu uygulamaya ait eski rota önbelleklerini sil
+            Object.keys(localStorage)
+                .filter(k => k.startsWith('foton_spots_'))
+                .forEach(k => localStorage.removeItem(k));
+            
+            // Temizlik sonrası tekrar yazmayı dene
+            try {
+                localStorage.setItem(key, JSON.stringify(data));
+            } catch (retryError) {
+                console.error("❌ Temizliğe rağmen LocalStorage yazma hatası:", retryError);
+            }
+        }
+    }
+}
+
 /**
  * Open-Meteo API üzerinden anlık rüzgar ve bulutluluk durumunu çeker.
  */
 export async function getWeatherData(lat, lon) {
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=cloud_cover,wind_speed_10m&timezone=auto`;
     
-    const response = await fetch(url);
+    // Hava durumu için de 8 saniye timeout uyguluyoruz
+    const response = await fetchWithTimeout(url, { timeout: 8000 });
     if (!response.ok) {
         throw new Error("Hava durumu verisi alınamadı.");
     }
@@ -29,23 +78,25 @@ export async function getWeatherData(lat, lon) {
 
 /**
  * Overpass API üzerinden 5 km çapındaki tarihi harabeleri ve manzara noktalarını çeker.
- * Önbellek ve Çoklu Sunucu Desteği içerir.
+ * Önbellek, Zaman Aşımı ve Çoklu Sunucu Desteği içerir.
  */
 export async function getNearbySpots(lat, lon, radius = 5000) {
     // 1. ADIM: Önbellek (Cache) Kontrolü
-    // Koordinatları virgülden sonra 2 basamağa yuvarlıyoruz (~1.1 km hassasiyet). 
-    // Böylece GPS hafifçe oynasa bile aynı bölgede kalındığı sürece gereksiz istek atılmaz.
     const cacheKey = `foton_spots_${lat.toFixed(2)}_${lon.toFixed(2)}`;
     const cachedData = localStorage.getItem(cacheKey);
 
     if (cachedData) {
-        const { timestamp, elements } = JSON.parse(cachedData);
-        const ageInHours = (Date.now() - timestamp) / (1000 * 60 * 60);
+        try {
+            const { timestamp, elements } = JSON.parse(cachedData);
+            const ageInHours = (Date.now() - timestamp) / (1000 * 60 * 60);
 
-        // Eğer veriler 24 saatten daha yeniyse doğrudan hafızadan yükle (Sıfır internet kullanımı!)
-        if (ageInHours < 24) {
-            console.log("📍 Veriler yerel önbellekten yüklendi.");
-            return elements;
+            // 24 saatten taze verileri doğrudan hafızadan yükle (Çevrimdışı dostu)
+            if (ageInHours < 24) {
+                console.log("📍 Veriler yerel önbellekten başarıyla yüklendi.");
+                return elements;
+            }
+        } catch (e) {
+            console.warn("⚠️ Önbellek verisi bozuk, yeniden sorgulanacak.");
         }
     }
 
@@ -66,40 +117,47 @@ export async function getNearbySpots(lat, lon, radius = 5000) {
     for (const instanceUrl of OVERPASS_INSTANCES) {
         try {
             console.log(`🔗 Sorgulanıyor: ${instanceUrl}`);
-            const response = await fetch(instanceUrl, {
+            
+            // Zaman aşımı korumalı POST isteği
+            const response = await fetchWithTimeout(instanceUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
                 },
-                body: "data=" + encodeURIComponent(query)
+                body: "data=" + encodeURIComponent(query),
+                timeout: 10000 // Sunucu başına maksimum 10 saniye tahammül et
             });
 
             if (response.ok) {
                 const data = await response.json();
                 const elements = data.elements || [];
 
-                // 3. ADIM: Başarılı Sonucu Önbelleğe Yaz
+                // 3. ADIM: Başarılı Sonucu Önbelleğe Güvenle Yaz
                 const cachePayload = {
                     timestamp: Date.now(),
                     elements: elements
                 };
-                localStorage.setItem(cacheKey, JSON.stringify(cachePayload));
+                safeSetLocalStorage(cacheKey, cachePayload);
 
                 return elements;
             } else {
-                console.warn(`⚠️ Sunucu hata verdi: ${instanceUrl} (Kod: ${response.status})`);
+                console.warn(`⚠️ Sunucu hata kodu döndürdü: ${instanceUrl} (Kod: ${response.status})`);
             }
         } catch (err) {
-            console.warn(`⚠️ Bağlantı başarısız: ${instanceUrl}`, err);
+            console.warn(`⚠️ Bağlantı başarısız veya zaman aşımı: ${instanceUrl}`, err);
             lastError = err;
         }
     }
 
-    // Eğer tüm sunucular denendi ve hiçbiri yanıt vermediyse eski tarihli önbelleğe sığın
+    // Eğer tüm sunucular denendi ve hiçbiri yanıt vermediyse, süresi geçmiş eski önbelleğe sığın
     if (cachedData) {
-        console.warn("🚨 Tüm canlı sunucular çöktü! Süresi geçmiş eski yerel veriler yükleniyor.");
-        const { elements } = JSON.parse(cachedData);
-        return elements;
+        console.warn("🚨 Tüm canlı sunucular çöktü veya ulaşılamaz durumda! Eski yerel veriler yükleniyor.");
+        try {
+            const { elements } = JSON.parse(cachedData);
+            return elements;
+        } catch (e) {
+            // Önbellek de okunamaz durumdaysa hataya devam et
+        }
     }
 
     throw lastError || new Error("Hiçbir Overpass sunucusundan yanıt alınamadı.");
@@ -110,11 +168,13 @@ export async function getNearbySpots(lat, lon, radius = 5000) {
  */
 export function calculateDistance(lat1, lon1, lat2, lon2) {
     const R = 6371; // Dünya yarıçapı (km)
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-              Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+              
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
 }

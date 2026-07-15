@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#FF8A80">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#FF8A80">
     <title>Foton Vibe</title>
+    <link rel="manifest" href="manifest.json">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -114,6 +115,10 @@
                             <span class="text-[10px] block text-m3RedMuted/60">BULUTLULUK</span>
                             <span class="text-sm font-semibold" id="cloud-status">--</span>
                         </div>
+                        <div class="border-r border-m3Border pr-2 pt-2 border-t border-m3Border col-span-2">
+                            <span class="text-[10px] block text-m3RedMuted/60">IŞIK KİRLİLİĞİ (BORTLE)</span>
+                            <span class="text-sm font-semibold" id="bortle-value">Hesaplanıyor...</span>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -136,93 +141,94 @@
             </section>
 
             <section id="tab-hesaplama" class="hidden space-y-4">
-    <div class="bg-m3Surface p-4 rounded-2xl border border-m3Border space-y-4">
-        <h2 class="text-xs font-semibold uppercase tracking-wider text-m3RedMuted">⏱️ Gelişmiş NPF Pozlama Laboratuvarı</h2>
-        
-        <div class="space-y-3">
-            <div class="grid grid-cols-2 gap-2">
-                <div>
-                    <label class="text-[9px] block text-m3RedMuted/60 mb-1">Odak Uzaklığı (mm)</label>
-                    <input type="number" id="input-focal" value="50" step="1" class="w-full bg-m3Bg border border-m3Border rounded-xl p-2 text-xs text-m3Red font-mono focus:outline-none focus:border-m3Red">
-                </div>
-                <div>
-                    <label class="text-[9px] block text-m3RedMuted/60 mb-1">Diyafram (f/)</label>
-                    <input type="number" id="input-aperture" value="2.0" step="0.1" class="w-full bg-m3Bg border border-m3Border rounded-xl p-2 text-xs text-m3Red font-mono focus:outline-none focus:border-m3Red">
-                </div>
-            </div>
-            
-            <div class="grid grid-cols-2 gap-2">
-                <div>
-                    <label class="text-[9px] block text-m3RedMuted/60 mb-1">Sensör Tipi</label>
-                    <select id="select-sensor" class="w-full bg-m3Bg border border-m3Border rounded-xl p-2 text-xs text-m3Red font-mono focus:outline-none focus:border-m3Red">
-                        <option value="fullframe">Full Frame (35mm)</option>
-                        <option value="apsc">APS-C (Sony/Fuji/Nikon 1.5x)</option>
-                        <option value="apsc-canon">APS-C (Canon 1.6x)</option>
-                        <option value="m43">Micro Four Thirds (2.0x)</option>
-                        <option value="med-format">Medium Format (GFX/X1D)</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="text-[9px] block text-m3RedMuted/60 mb-1">Çözünürlük (Megapiksel - MP)</label>
-                    <input type="number" id="input-mp" value="24" step="1" class="w-full bg-m3Bg border border-m3Border rounded-xl p-2 text-xs text-m3Red font-mono focus:outline-none focus:border-m3Red">
-                </div>
-            </div>
+                <div class="bg-m3Surface p-4 rounded-2xl border border-m3Border space-y-4">
+                    <h2 class="text-xs font-semibold uppercase tracking-wider text-m3RedMuted">⏱️ Gelişmiş NPF Pozlama Laboratuvarı</h2>
+                    
+                    <div class="space-y-3">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-[9px] block text-m3RedMuted/60 mb-1">Odak Uzaklığı (mm)</label>
+                                <input type="number" id="input-focal" value="50" step="1" class="w-full bg-m3Bg border border-m3Border rounded-xl p-2 text-xs text-m3Red font-mono focus:outline-none focus:border-m3Red">
+                            </div>
+                            <div>
+                                <label class="text-[9px] block text-m3RedMuted/60 mb-1">Diyafram (f/)</label>
+                                <input type="number" id="input-aperture" value="2.0" step="0.1" class="w-full bg-m3Bg border border-m3Border rounded-xl p-2 text-xs text-m3Red font-mono focus:outline-none focus:border-m3Red">
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-[9px] block text-m3RedMuted/60 mb-1">Sensör Tipi</label>
+                                <select id="select-sensor" class="w-full bg-m3Bg border border-m3Border rounded-xl p-2 text-xs text-m3Red font-mono focus:outline-none focus:border-m3Red">
+                                    <option value="fullframe">Full Frame (35mm)</option>
+                                    <option value="apsc">APS-C (Sony/Fuji/Nikon 1.5x)</option>
+                                    <option value="apsc-canon">APS-C (Canon 1.6x)</option>
+                                    <option value="m43">Micro Four Thirds (2.0x)</option>
+                                    <option value="med-format">Medium Format (GFX/X1D)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[9px] block text-m3RedMuted/60 mb-1">Çözünürlük (Megapiksel - MP)</label>
+                                <input type="number" id="input-mp" value="24" step="1" class="w-full bg-m3Bg border border-m3Border rounded-xl p-2 text-xs text-m3Red font-mono focus:outline-none focus:border-m3Red">
+                            </div>
+                        </div>
 
-            <div class="grid grid-cols-2 gap-2">
-                <div>
-                    <label class="text-[9px] block text-m3RedMuted/60 mb-1">Hedef Bölge (Sapma / Dec)</label>
-                    <select id="select-dec" class="w-full bg-m3Bg border border-m3Border rounded-xl p-2 text-xs text-m3Red font-mono focus:outline-none focus:border-m3Red">
-                        <option value="0">Ekvator / Standart (0°)</option>
-                        <option value="45">Orta İrtifa (45°)</option>
-                        <option value="89">Kutup Yıldızı (89°)</option>
-                    </select>
-                </div>
-                <div class="flex flex-col justify-end pb-1 pl-1">
-                    <span class="text-[8px] text-m3RedMuted/50 block">HESAPLANAN PİKSEL BOYUTU</span>
-                    <span id="output-calculated-pitch" class="text-xs font-mono font-bold text-m3Red">5.96 µm</span>
-                </div>
-            </div>
-            
-            <button id="btn-calc-exposure" class="w-full bg-m3RedDark border border-m3Border hover:bg-red-950/30 py-2.5 rounded-xl text-xs font-semibold tracking-wider transition-colors">
-                📊 Pozlama Hesapla
-            </button>
-        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-[9px] block text-m3RedMuted/60 mb-1">Hedef Bölge (Sapma / Dec)</label>
+                                <select id="select-dec" class="w-full bg-m3Bg border border-m3Border rounded-xl p-2 text-xs text-m3Red font-mono focus:outline-none focus:border-m3Red">
+                                    <option value="0">Ekvator / Standart (0°)</option>
+                                    <option value="45">Orta İrtifa (45°)</option>
+                                    <option value="89">Kutup Yıldızı (89°)</option>
+                                </select>
+                            </div>
+                            <div class="flex flex-col justify-end pb-1 pl-1">
+                                <span class="text-[8px] text-m3RedMuted/50 block">HESAPLANAN PİKSEL BOYUTU</span>
+                                <span id="output-calculated-pitch" class="text-xs font-mono font-bold text-m3Red">5.96 µm</span>
+                            </div>
+                        </div>
+                        
+                        <button id="btn-calc-exposure" class="w-full bg-m3RedDark border border-m3Border hover:bg-red-950/30 py-2.5 rounded-xl text-xs font-semibold tracking-wider transition-colors">
+                            📊 Pozlama Hesapla
+                        </button>
+                    </div>
 
-        <div class="border-t border-m3Border pt-4 space-y-3">
-            <div class="grid grid-cols-3 gap-2 text-center">
-                <div class="bg-m3Bg p-2 rounded-xl border border-m3Border">
-                    <span class="text-[8px] block text-m3RedMuted/60">NPF SÜRESİ</span>
-                    <span id="output-npf" class="text-xs font-bold font-mono">-- s</span>
-                </div>
-                <div class="bg-m3Bg p-2 rounded-xl border border-m3Border">
-                    <span class="text-[8px] block text-m3RedMuted/60">İDEAL ISO</span>
-                    <span id="output-iso" class="text-xs font-bold font-mono">--</span>
-                </div>
-                <div class="bg-m3Bg p-2 rounded-xl border border-m3Border">
-                    <span class="text-[8px] block text-m3RedMuted/60">STACK KARE</span>
-                    <span id="output-stack" class="text-xs font-bold font-mono">--</span>
-                </div>
-            </div>
+                    <div class="border-t border-m3Border pt-4 space-y-3">
+                        <div class="grid grid-cols-3 gap-2 text-center">
+                            <div class="bg-m3Bg p-2 rounded-xl border border-m3Border">
+                                <span class="text-[8px] block text-m3RedMuted/60">NPF SÜRESİ</span>
+                                <span id="output-npf" class="text-xs font-bold font-mono">-- s</span>
+                            </div>
+                            <div class="bg-m3Bg p-2 rounded-xl border border-m3Border">
+                                <span class="text-[8px] block text-m3RedMuted/60">İDEAL ISO</span>
+                                <span id="output-iso" class="text-xs font-bold font-mono">--</span>
+                            </div>
+                            <div class="bg-m3Bg p-2 rounded-xl border border-m3Border">
+                                <span class="text-[8px] block text-m3RedMuted/60">STACK KARE</span>
+                                <span id="output-stack" class="text-xs font-bold font-mono">--</span>
+                            </div>
+                        </div>
 
-            <div id="output-warnings" class="text-[10px] text-amber-500/90 leading-relaxed italic space-y-1"></div>
-        </div>
-    </div>
-</section>
-<section id="tab-rota" class="hidden space-y-4">
-    <div class="bg-m3Surface p-4 rounded-2xl border border-m3Border space-y-3">
-        <h2 class="text-xs font-semibold uppercase tracking-wider text-m3RedMuted">📍 Rota Keşif Dedektörü</h2>
-        <p class="text-[10px] text-m3RedMuted/80 leading-relaxed">
-            Overpass API üzerinden konumunun 5 km çevresindeki tarihi kalıntıları, harabeleri ve ışık kirliliğinden uzak tepe noktalarını canlı sorgular.
-        </p>
-        <button id="btn-search-route" class="w-full bg-m3RedDark border border-m3Border hover:bg-red-950/30 py-2.5 rounded-xl text-xs font-semibold tracking-wider transition-colors">
-            🔍 Çevreyi Tara
-        </button>
-    </div>
+                        <div id="output-warnings" class="text-[10px] text-amber-500/90 leading-relaxed italic space-y-1"></div>
+                    </div>
+                </div>
+            </section>
 
-    <div id="route-results" class="space-y-2 max-h-[320px] overflow-y-auto pr-1">
-        <div class="text-center py-6 text-xs text-m3RedMuted/40 italic">Henüz arama yapılmadı.</div>
-    </div>
-</section>
+            <section id="tab-rota" class="hidden space-y-4">
+                <div class="bg-m3Surface p-4 rounded-2xl border border-m3Border space-y-3">
+                    <h2 class="text-xs font-semibold uppercase tracking-wider text-m3RedMuted">📍 Rota Keşif Dedektörü</h2>
+                    <p class="text-[10px] text-m3RedMuted/80 leading-relaxed">
+                        Overpass API üzerinden konumunun 5 km çevresindeki tarihi kalıntıları, harabeleri ve ışık kirliliğinden uzak tepe noktalarını canlı sorgular.
+                    </p>
+                    <button id="btn-search-route" class="w-full bg-m3RedDark border border-m3Border hover:bg-red-950/30 py-2.5 rounded-xl text-xs font-semibold tracking-wider transition-colors">
+                        🔍 Çevreyi Tara
+                    </button>
+                </div>
+
+                <div id="route-results" class="space-y-2 max-h-[320px] overflow-y-auto pr-1">
+                    <div class="text-center py-6 text-xs text-m3RedMuted/40 italic">Henüz arama yapılmadı.</div>
+                </div>
+            </section>
 
         </div>
     </main>
