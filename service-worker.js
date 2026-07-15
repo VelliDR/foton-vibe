@@ -57,7 +57,7 @@ self.addEventListener('activate', (event) => {
 
 // 3. İstek Yakalama (Fetch): Önce Önbelleğe Bak, Yoksa Ağa Git
 self.addEventListener('fetch', (event) => {
-    // Sadece yerel GET isteklerini önbellekten oku (Harici API'ler bu kuralın dışındadır)
+    // Sadece yerel GET isteklerini önbellekten oku (Harici API'ler muaf)
     if (event.request.method !== 'GET' || !event.request.url.startsWith(self.location.origin)) {
         return;
     }
@@ -65,16 +65,17 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
         caches.match(event.request).then((cachedResponse) => {
             if (cachedResponse) {
-                // Eğer dosya önbellekte varsa hemen sun (Çevrimdışı hız)
                 return cachedResponse;
             }
             
-            // Önbellekte yoksa ağa git
-            return fetch(event.request).catch(() => {
-                // Eğer internet tamamen yoksa ve istek HTML ise ana sayfayı döndür
-                if (event.request.headers.get('accept').includes('text/html')) {
+            return fetch(event.request).catch((err) => {
+                // Güvenli kontrol: acceptHeader null ise çökmesini engelle
+                const acceptHeader = event.request.headers.get('accept');
+                if (acceptHeader && acceptHeader.includes('text/html')) {
                     return caches.match('./index.html');
                 }
+                // HTML dışındaki başarısızlıkları tarayıcıya doğal yolla fırlat, SW'yi kilitleme
+                throw err;
             });
         })
     );

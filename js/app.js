@@ -353,9 +353,19 @@ window.addEventListener('DOMContentLoaded', () => {
     applyManualCoordinates(); 
     updateCalculatedPitchUI();
 
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./service-worker.js')
-            .then((reg) => console.log('✅ Service Worker başarıyla kaydedildi.', reg))
-            .catch((err) => console.warn('❌ Service Worker kaydı başarısız.', err));
+   // js/app.js dosyasının en altındaki Service Worker bloğunu bununla değiştir:
+if ('serviceWorker' in navigator) {
+    // Dinamik ve hatasız alt dizin (Subdirectory) uyumlu SW kayıt yolu bulucu
+    let swPath = window.location.pathname;
+    if (!swPath.endsWith('/') && !swPath.includes('.')) {
+        swPath += '/';
+    } else {
+        swPath = swPath.substring(0, swPath.lastIndexOf('/') + 1);
     }
+    const swUrl = `${swPath}service-worker.js`;
+
+    navigator.serviceWorker.register(swUrl)
+        .then((reg) => console.log('✅ Service Worker başarıyla kaydedildi. Kapsam:', reg.scope))
+        .catch((err) => console.warn('❌ Service Worker kaydı başarısız:', err));
+}
 });
