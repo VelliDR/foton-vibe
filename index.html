@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#FF8A80">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Foton Vibe</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        m3Bg: '#121318',
+                        m3Surface: '#1A1B20',
+                        m3Red: '#FF8A80',
+                        m3RedMuted: '#E57373',
+                        m3RedDark: '#3D1A1A',
+                        m3Border: '#2E1A1A'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: #121318;
+            overscroll-behavior: none;
+        }
+    </style>
+</head>
+<body class="text-m3Red min-h-screen flex">
+
+    <aside class="w-14 bg-m3Surface border-r border-m3Border flex flex-col justify-between items-center py-6 fixed left-0 top-0 h-full z-50">
+        <div class="text-lg font-bold text-m3Red">Φ</div>
+        <nav class="flex flex-col gap-6 w-full px-2">
+            <button id="btn-dashboard" class="flex flex-col items-center justify-center p-2 rounded-xl bg-m3RedDark text-m3Red transition-colors">
+                <span class="text-xl">🌌</span>
+                <span class="text-[8px] mt-1 font-semibold">Panel</span>
+            </button>
+            <button id="btn-fikir" class="flex flex-col items-center justify-center p-2 rounded-xl text-gray-600 hover:text-m3RedMuted transition-colors">
+                <span class="text-xl">✍️</span>
+                <span class="text-[8px] mt-1 font-semibold">Vibe</span>
+            </button>
+            <button id="btn-hesaplama" class="flex flex-col items-center justify-center p-2 rounded-xl text-gray-600 hover:text-m3RedMuted transition-colors">
+                <span class="text-xl">⏱️</span>
+                <span class="text-[8px] mt-1 font-semibold">Poz</span>
+            </button>
+            <button id="btn-rota" class="flex flex-col items-center justify-center p-2 rounded-xl text-gray-600 hover:text-m3RedMuted transition-colors">
+                <span class="text-xl">📍</span>
+                <span class="text-[8px] mt-1 font-semibold">Rota</span>
+            </button>
+        </nav>
+        <div class="text-[9px] text-m3RedMuted/50">v1.0</div>
+    </aside>
+
+    <main class="flex-1 pl-14 min-h-screen flex flex-col">
+        <header class="p-4 border-b border-m3Border flex justify-between items-center bg-m3Bg">
+            <div>
+                <h1 id="page-title" class="text-sm font-semibold tracking-wider text-m3Red uppercase">GÖSTERGE PANELİ</h1>
+                <p class="text-[10px] text-m3RedMuted/70 font-mono">Modüler Build</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <span id="gps-dot" class="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>
+                <span class="text-[10px] text-m3RedMuted font-mono" id="gps-status">GPS Bekleniyor</span>
+            </div>
+        </header>
+
+        <div class="p-4 flex-1 flex flex-col justify-start gap-4">
+
+            <section id="tab-dashboard" class="space-y-4">
+                <div class="bg-m3Surface p-4 rounded-2xl border border-m3Border">
+                    <h2 class="text-xs font-semibold uppercase tracking-wider mb-3 text-m3RedMuted">📍 Hedef Konum Ayarı</h2>
+                    <div class="space-y-3">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-[9px] block text-m3RedMuted/60 mb-1">Enlem (Latitude)</label>
+                                <input type="number" id="input-lat" value="39.9333" step="0.0001" class="w-full bg-m3Bg border border-m3Border rounded-xl p-2 text-xs text-m3Red font-mono focus:outline-none focus:border-m3Red">
+                            </div>
+                            <div>
+                                <label class="text-[9px] block text-m3RedMuted/60 mb-1">Boylam (Longitude)</label>
+                                <input type="number" id="input-lon" value="32.8500" step="0.0001" class="w-full bg-m3Bg border border-m3Border rounded-xl p-2 text-xs text-m3Red font-mono focus:outline-none focus:border-m3Red">
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button id="btn-location-gps" class="flex-1 bg-m3RedDark border border-m3Border hover:bg-red-950/30 py-2 rounded-xl text-xs font-semibold tracking-wider transition-colors">
+                                🛰️ GPS İle Al
+                            </button>
+                            <button id="btn-location-apply" class="flex-1 border border-m3RedMuted/50 hover:bg-m3RedDark py-2 rounded-xl text-xs font-semibold tracking-wider transition-colors">
+                                💾 Uygula
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-m3Surface p-4 rounded-2xl border border-m3Border">
+                    <h2 class="text-xs font-semibold uppercase tracking-wider mb-3 text-m3RedMuted">🌌 Astronomik Durum</h2>
+                    <div class="grid grid-cols-2 gap-3 text-xs font-mono">
+                        <div class="border-r border-m3Border pr-2">
+                            <span class="text-[10px] block text-m3RedMuted/60">GÜNEŞ BATIMI</span>
+                            <span class="text-sm font-semibold" id="sun-set">--:--</span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] block text-m3RedMuted/60">KARANLIK BAŞLANGIÇ</span>
+                            <span class="text-sm font-semibold" id="dark-start">--:--</span>
+                        </div>
+                        <div class="border-r border-m3Border pr-2 pt-2 border-t border-m3Border">
+                            <span class="text-[10px] block text-m3RedMuted/60">AY EVRESİ</span>
+                            <span class="text-sm font-semibold" id="moon-phase">Bekleniyor...</span>
+                        </div>
+                        <div class="pt-2 border-t border-m3Border">
+                            <span class="text-[10px] block text-m3RedMuted/60">BULUTLULUK</span>
+                            <span class="text-sm font-semibold" id="cloud-status">--</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tab-fikir" class="hidden space-y-4">
+                <div class="bg-m3Surface p-5 rounded-2xl border border-m3Border">
+                    <div class="flex items-center gap-2 mb-3">
+                        <span class="text-[10px] uppercase tracking-widest text-m3Red font-bold" id="vibe-slot">ZAMAN DİLİMİ</span>
+                        <span class="text-xs text-m3RedMuted/50">•</span>
+                        <span class="text-[10px] text-m3RedMuted/70">Foton Felsefesi</span>
+                    </div>
+                    <p class="text-m3Red text-base italic leading-relaxed font-serif min-h-[80px]" id="vibe-text">
+                        Zihin taranıyor...
+                    </p>
+                    <div class="mt-4 pt-4 border-t border-m3Border flex justify-between items-center text-[10px] text-m3RedMuted/70">
+                        <span>Helios 44M-4 Hissiyatı</span>
+                        <button id="btn-vibe-refresh" class="text-m3Red font-bold hover:underline">Zihni Tazele</button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tab-hesaplama" class="hidden space-y-4">
+    <div class="bg-m3Surface p-4 rounded-2xl border border-m3Border space-y-4">
+        <h2 class="text-xs font-semibold uppercase tracking-wider text-m3RedMuted">⏱️ Gelişmiş NPF Pozlama Laboratuvarı</h2>
+        
+        <div class="space-y-3">
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="text-[9px] block text-m3RedMuted/60 mb-1">Odak Uzaklığı (mm)</label>
+                    <input type="number" id="input-focal" value="50" step="1" class="w-full bg-m3Bg border border-m3Border rounded-xl p-2 text-xs text-m3Red font-mono focus:outline-none focus:border-m3Red">
+                </div>
+                <div>
+                    <label class="text-[9px] block text-m3RedMuted/60 mb-1">Diyafram (f/)</label>
+                    <input type="number" id="input-aperture" value="2.0" step="0.1" class="w-full bg-m3Bg border border-m3Border rounded-xl p-2 text-xs text-m3Red font-mono focus:outline-none focus:border-m3Red">
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="text-[9px] block text-m3RedMuted/60 mb-1">Sensör Tipi</label>
+                    <select id="select-sensor" class="w-full bg-m3Bg border border-m3Border rounded-xl p-2 text-xs text-m3Red font-mono focus:outline-none focus:border-m3Red">
+                        <option value="fullframe">Full Frame (35mm)</option>
+                        <option value="apsc">APS-C (Sony/Fuji/Nikon 1.5x)</option>
+                        <option value="apsc-canon">APS-C (Canon 1.6x)</option>
+                        <option value="m43">Micro Four Thirds (2.0x)</option>
+                        <option value="med-format">Medium Format (GFX/X1D)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[9px] block text-m3RedMuted/60 mb-1">Çözünürlük (Megapiksel - MP)</label>
+                    <input type="number" id="input-mp" value="24" step="1" class="w-full bg-m3Bg border border-m3Border rounded-xl p-2 text-xs text-m3Red font-mono focus:outline-none focus:border-m3Red">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="text-[9px] block text-m3RedMuted/60 mb-1">Hedef Bölge (Sapma / Dec)</label>
+                    <select id="select-dec" class="w-full bg-m3Bg border border-m3Border rounded-xl p-2 text-xs text-m3Red font-mono focus:outline-none focus:border-m3Red">
+                        <option value="0">Ekvator / Standart (0°)</option>
+                        <option value="45">Orta İrtifa (45°)</option>
+                        <option value="89">Kutup Yıldızı (89°)</option>
+                    </select>
+                </div>
+                <div class="flex flex-col justify-end pb-1 pl-1">
+                    <span class="text-[8px] text-m3RedMuted/50 block">HESAPLANAN PİKSEL BOYUTU</span>
+                    <span id="output-calculated-pitch" class="text-xs font-mono font-bold text-m3Red">5.96 µm</span>
+                </div>
+            </div>
+            
+            <button id="btn-calc-exposure" class="w-full bg-m3RedDark border border-m3Border hover:bg-red-950/30 py-2.5 rounded-xl text-xs font-semibold tracking-wider transition-colors">
+                📊 Pozlama Hesapla
+            </button>
+        </div>
+
+        <div class="border-t border-m3Border pt-4 space-y-3">
+            <div class="grid grid-cols-3 gap-2 text-center">
+                <div class="bg-m3Bg p-2 rounded-xl border border-m3Border">
+                    <span class="text-[8px] block text-m3RedMuted/60">NPF SÜRESİ</span>
+                    <span id="output-npf" class="text-xs font-bold font-mono">-- s</span>
+                </div>
+                <div class="bg-m3Bg p-2 rounded-xl border border-m3Border">
+                    <span class="text-[8px] block text-m3RedMuted/60">İDEAL ISO</span>
+                    <span id="output-iso" class="text-xs font-bold font-mono">--</span>
+                </div>
+                <div class="bg-m3Bg p-2 rounded-xl border border-m3Border">
+                    <span class="text-[8px] block text-m3RedMuted/60">STACK KARE</span>
+                    <span id="output-stack" class="text-xs font-bold font-mono">--</span>
+                </div>
+            </div>
+
+            <div id="output-warnings" class="text-[10px] text-amber-500/90 leading-relaxed italic space-y-1"></div>
+        </div>
+    </div>
+</section>
+<section id="tab-rota" class="hidden space-y-4">
+    <div class="bg-m3Surface p-4 rounded-2xl border border-m3Border space-y-3">
+        <h2 class="text-xs font-semibold uppercase tracking-wider text-m3RedMuted">📍 Rota Keşif Dedektörü</h2>
+        <p class="text-[10px] text-m3RedMuted/80 leading-relaxed">
+            Overpass API üzerinden konumunun 5 km çevresindeki tarihi kalıntıları, harabeleri ve ışık kirliliğinden uzak tepe noktalarını canlı sorgular.
+        </p>
+        <button id="btn-search-route" class="w-full bg-m3RedDark border border-m3Border hover:bg-red-950/30 py-2.5 rounded-xl text-xs font-semibold tracking-wider transition-colors">
+            🔍 Çevreyi Tara
+        </button>
+    </div>
+
+    <div id="route-results" class="space-y-2 max-h-[320px] overflow-y-auto pr-1">
+        <div class="text-center py-6 text-xs text-m3RedMuted/40 italic">Henüz arama yapılmadı.</div>
+    </div>
+</section>
+
+        </div>
+    </main>
+
+    <script type="module" src="./js/app.js"></script>
+</body>
+</html>
