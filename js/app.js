@@ -1,19 +1,20 @@
+/**
+ * APP.JS - Ana Uygulama Durumu ve UI Kontrol Merkezi
+ */
+
 import { calculateNpfAdvanced, evaluateOptics, calculateSensorRecipe, calculatePixelPitch } from './exposure.js';
-import { getSunTimes, getMoonStatus, estimateBortleOffline } from './astro.js';
+import { getSunTimes, getMoonStatus, estimateBortleOffline, getCelestialPositions } from './astro.js';
 import { getRandomVibe } from './vibe.js';
 import { getWeatherData, getNearbySpots, calculateDistance } from './api.js';
 
-// ==========================================
-// 1. UYGULAMA DURUMU (STATE) & SABİTLER
-// ==========================================
 export const state = {
     currentTab: 'dashboard',
     coords: {
         lat: 39.9333,
         lon: 32.8500
     },
-    baseBortle: 3, // Başlangıç taban ışık kirliliği
-    bortle: 4,     // Dinamik (Ay etkisi dahil) nihai Bortle skoru
+    baseBortle: 3,
+    bortle: 4,
     gpsLocked: false
 };
 
@@ -26,9 +27,6 @@ const TAB_TITLES = {
 
 const TABS = Object.keys(TAB_TITLES);
 
-// ==========================================
-// 2. SEKMELER VE UI KONTROLÜ
-// ==========================================
 function switchTab(targetTabId) {
     if (!TABS.includes(targetTabId)) return;
 
@@ -58,9 +56,8 @@ function switchTab(targetTabId) {
 
     if (targetTabId === 'fikir') {
         updateVibeUI();
-        if (targetTabId === 'hesaplama') {
+    } else if (targetTabId === 'hesaplama') {
         handleExposureCalculation();
-    }
     }
 }
 
@@ -75,27 +72,24 @@ function updateVibeUI() {
     }
 }
 
-// ==========================================
-// 3. ASTRONOMİK HESAPLAMALAR VE KONTROLLER
-// ==========================================
 async function updateAstronomicalUI() {
     const today = new Date();
 
-    // Güneş Zamanları Güncelleme
+    // Güneş Zamanları
     const sunTimes = getSunTimes(state.coords.lat, state.coords.lon, today);
     const sunSetElem = document.getElementById('sun-set');
     const darkStartElem = document.getElementById('dark-start');
     if (sunSetElem) sunSetElem.innerText = sunTimes.sunset;
     if (darkStartElem) darkStartElem.innerText = sunTimes.astroDark;
 
-    // Ay Evresi Güncelleme
+    // Ay Durumu
     const moon = getMoonStatus(today);
     const moonPhaseElem = document.getElementById('moon-phase');
     if (moonPhaseElem) {
         moonPhaseElem.innerText = `${moon.phaseName} (%${moon.phasePercent})`;
     }
 
-    // Bortle Tahmini Güncelleme
+    // Bortle Değeri
     const bortleResult = estimateBortleOffline(state.coords.lat, state.coords.lon, today, state.baseBortle);
     state.bortle = bortleResult.score;
 
@@ -104,7 +98,7 @@ async function updateAstronomicalUI() {
         bortleElem.innerText = `Bortle ${bortleResult.score} (${bortleResult.reason})`;
     }
 
-    // Canlı Hava Durumu Güncelleme
+    // Hava Tahmini
     const cloudElem = document.getElementById('cloud-status');
     if (cloudElem) {
         cloudElem.innerText = "Yükleniyor...";
@@ -113,14 +107,51 @@ async function updateAstronomicalUI() {
             cloudElem.innerText = `%${weather.clouds} Bulut, ${weather.wind} km/s Rüzgar`;
         } catch (err) {
             cloudElem.innerText = "Hava Tahmini Alınamadı";
-            console.error("Hava durumu API hatası:", err);
+            console.error(err);
+        }
+    }
+
+    // Kozmik Göstergeleri Hesapla ve Yazdır
+    const celestialList = document.getElementById('celestial-list');
+    if (celestialList) {
+        try {
+            const positions = getCelestialPositions(state.coords.lat, state.coords.lon, today);
+            celestialList.innerHTML = "";
+
+            const getCardinal = (az) => {
+                const dirs = ['K', 'KD', 'D', 'GD', 'G', 'GB', 'B', 'KB'];
+                return dirs[Math.round(az / 45) % 8];
+            };
+
+            positions.forEach(pos => {
+                const row = document.createElement('div');
+                row.className = "flex justify-between items-center text-xs font-mono py-1.5 border-b border-m3Border/20 last:border-0";
+                
+                const nameSpan = document.createElement('span');
+                nameSpan.className = "flex items-center gap-2";
+                nameSpan.innerHTML = `<span>${pos.icon}</span> <span class="font-sans font-semibold text-m3Red">${pos.name}</span>`;
+
+                const valSpan = document.createElement('span');
+                if (pos.isVisible) {
+                    const cardinal = getCardinal(pos.az);
+                    valSpan.innerHTML = `
+                        <span class="text-emerald-500 font-bold">↑ ${pos.alt.toFixed(1)}°</span> 
+                        <span class="text-m3RedMuted/70 text-[10px]">(${cardinal} - ${pos.az.toFixed(0)}°)</span>
+                    `;
+                } else {
+                    valSpan.innerHTML = `<span class="text-gray-600 italic">Ufkun Altında (${pos.alt.toFixed(1)}°)</span>`;
+                }
+
+                row.appendChild(nameSpan);
+                row.appendChild(valSpan);
+                celestialList.appendChild(row);
+            });
+        } catch (e) {
+            console.error("Kozmik göstergeler güncellenemedi:", e);
         }
     }
 }
 
-// ==========================================
-// 4. KONUM VE KOORDİNAT YÖNETİMİ
-// ==========================================
 function requestLocation() {
     const statusText = document.getElementById('gps-status');
     const gpsDot = document.getElementById('gps-dot');
@@ -157,14 +188,13 @@ function requestLocation() {
             if (error.code === error.PERMISSION_DENIED) {
                 errorMsg = "İzin Reddedildi";
             } else if (error.code === error.POSITION_UNAVAILABLE) {
-                errorMsg = "Sinyal Yok / Kapalı";
+                errorMsg = "Sinyal Yok";
             } else if (error.code === error.TIMEOUT) {
                 errorMsg = "Zaman Aşımı";
             }
 
             statusText.innerText = errorMsg;
             gpsDot.className = "w-2 h-2 rounded-full bg-red-800";
-            console.warn("GPS Hatası Detayı:", error);
         },
         { enableHighAccuracy: true, timeout: 10000 }
     );
@@ -179,7 +209,7 @@ function applyManualCoordinates() {
     const lonInput = parseFloat(lonInputElem.value);
 
     if (isNaN(latInput) || isNaN(lonInput)) {
-        alert("Lütfen geçerli bir enlem ve boylam değeri girin.");
+        alert("Geçersiz koordinat.");
         return;
     }
 
@@ -199,13 +229,13 @@ async function handleRouteSearch() {
     const resultsContainer = document.getElementById('route-results');
     if (!resultsContainer) return;
 
-    resultsContainer.innerHTML = `<div class="text-center py-6 text-xs text-m3RedMuted animate-pulse">Yakın çevre taranıyor (Overpass API)...</div>`;
+    resultsContainer.innerHTML = `<div class="text-center py-6 text-xs text-m3RedMuted animate-pulse">Çevre taranıyor (Overpass API)...</div>`;
 
     try {
         const spots = await getNearbySpots(state.coords.lat, state.coords.lon);
 
         if (spots.length === 0) {
-            resultsContainer.innerHTML = `<div class="text-center py-6 text-xs text-m3RedMuted/60">5 km yakınlarda uygun tarihi/doğal nokta bulunamadı.</div>`;
+            resultsContainer.innerHTML = `<div class="text-center py-6 text-xs text-m3RedMuted/60">Uygun nokta bulunamadı.</div>`;
             return;
         }
 
@@ -216,9 +246,8 @@ async function handleRouteSearch() {
             if (!spotLat || !spotLon) return null;
 
             const dist = calculateDistance(state.coords.lat, state.coords.lon, spotLat, spotLon);
-
-            const name = spot.tags.name || spot.tags.historic || spot.tags.natural || spot.tags.tourism || "Bilinmeyen Nokta";
-            const category = spot.tags.historic ? "Tarihi / Harabe" : (spot.tags.natural ? "Doğal Tepe/Yapı" : "Manzara Noktası");
+            const name = spot.tags.name || spot.tags.historic || spot.tags.natural || spot.tags.tourism || "Gizemli Nokta";
+            const category = spot.tags.historic ? "Tarihi Yapı" : (spot.tags.natural ? "Doğal Zirve" : "Manzara Noktası");
 
             return { name, dist, category };
         }).filter(s => s !== null);
@@ -253,14 +282,11 @@ async function handleRouteSearch() {
         });
 
     } catch (err) {
-        resultsContainer.innerHTML = `<div class="text-center py-6 text-xs text-m3RedMuted/60">Bağlantı hatası: Sunucu meşgul veya internetiniz yok.</div>`;
-        console.error("Rota arama hatası:", err);
+        resultsContainer.innerHTML = `<div class="text-center py-6 text-xs text-m3RedMuted/60">Overpass bağlantı hatası veya internet yok.</div>`;
+        console.error(err);
     }
 }
 
-// ==========================================
-// 5. POZLAMA LABORATUVARI KONTROLLERİ
-// ==========================================
 function updateCalculatedPitchUI() {
     const sensorTypeElem = document.getElementById('select-sensor');
     const mpElem = document.getElementById('input-mp');
@@ -293,15 +319,13 @@ function handleExposureCalculation() {
     const declination = parseFloat(decElem.value);
 
     if (isNaN(focal) || isNaN(aperture) || isNaN(megapixels) || isNaN(declination)) {
-        alert("Lütfen tüm alanları geçerli sayılarla doldurun.");
+        alert("Girdileri kontrol edin.");
         return;
     }
 
     const pitch = calculatePixelPitch(sensorType, megapixels);
     const t = calculateNpfAdvanced(focal, aperture, pitch, declination);
     const warnings = evaluateOptics(focal, aperture);
-    
-    // Gelişmiş reçete motorunu çağırıyoruz
     const recipe = calculateSensorRecipe(t, aperture, state.bortle);
 
     const npfOut = document.getElementById('output-npf');
@@ -316,13 +340,11 @@ function handleExposureCalculation() {
     if (warningsContainer) {
         warningsContainer.innerHTML = "";
         
-        // Bilgi Etiketi: Hesaplamada kullanılan güncel Bortle durumunu ekrana basıyoruz
         const pBortle = document.createElement('p');
         pBortle.className = "text-[10px] text-m3RedMuted/70 font-mono not-italic border-b border-m3Border/30 pb-2 mb-2";
-        pBortle.innerText = `ℹ️ Hesaplama Parametresi: Bortle ${state.bortle} (Panel sekmesinden güncellenir)`;
+        pBortle.innerText = `ℹ️ Hesaplama Parametresi: Bortle ${state.bortle}`;
         warningsContainer.appendChild(pBortle);
 
-        // Aşırı Pozlama Uyarısı
         if (recipe.overexposed) {
             const pOver = document.createElement('p');
             pOver.className = "text-[10px] text-amber-500 font-bold leading-relaxed";
@@ -330,7 +352,6 @@ function handleExposureCalculation() {
             warningsContainer.appendChild(pOver);
         }
 
-        // Diğer optik uyarıları ekle
         warnings.forEach(warn => {
             const p = document.createElement('p');
             p.innerText = warn;
@@ -339,9 +360,6 @@ function handleExposureCalculation() {
     }
 }
 
-// ==========================================
-// 6. OLAY DİNLEYİCİLERİ VE BAŞLANGIÇ
-// ==========================================
 function initEventListeners() {
     TABS.forEach(tabId => {
         const btn = document.getElementById(`btn-${tabId}`);
@@ -358,7 +376,6 @@ function initEventListeners() {
         if (el) el.addEventListener(event, fn);
     };
 
-    // Yapay ışık seçimi değiştiğinde taban kirliliği güncelle
     bindInput('select-environment', 'change', (e) => {
         state.baseBortle = parseInt(e.target.value);
         updateAstronomicalUI();
@@ -374,8 +391,8 @@ function initEventListeners() {
     bindInput('input-mp', 'input', updateCalculatedPitchUI);
 }
 
-window.addEventListener('DOMContentLoaded', () => {
-    // HTML'deki seçili çevresel ışık seviyesini başlangıç durumuna senkronize et
+// YARIŞ DURUMLARINI ENGELLEYEN GÜVENLİ INITIALIZATION METODU
+function initApp() {
     const envElem = document.getElementById('select-environment');
     if (envElem) {
         state.baseBortle = parseInt(envElem.value);
@@ -385,7 +402,6 @@ window.addEventListener('DOMContentLoaded', () => {
     applyManualCoordinates(); 
     updateCalculatedPitchUI();
 
-    // Dinamik ve hatasız alt dizin (Subdirectory) uyumlu SW kayıt yolu bulucu
     if ('serviceWorker' in navigator) {
         let swPath = window.location.pathname;
         if (!swPath.endsWith('/') && !swPath.includes('.')) {
@@ -396,7 +412,14 @@ window.addEventListener('DOMContentLoaded', () => {
         const swUrl = `${swPath}service-worker.js`;
 
         navigator.serviceWorker.register(swUrl)
-            .then((reg) => console.log('✅ Service Worker başarıyla kaydedildi. Kapsam:', reg.scope))
-            .catch((err) => console.warn('❌ Service Worker kaydı başarısız:', err));
+            .then((reg) => console.log('✅ Service Worker yüklendi:', reg.scope))
+            .catch((err) => console.warn('❌ Service Worker başarısız:', err));
     }
-});
+}
+
+// DOMContentLoaded yarışı için çift taraflı koruma kapısı
+if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', initApp);
+} else {
+    initApp();
+}
