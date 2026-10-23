@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+@theme {
+  --color-m3Bg: #121318;
+  --color-m3Surface: #1A1B20;
+  --color-m3Red: #FF8A80;
+  --color-m3RedMuted: #E57373;
+  --color-m3RedDark: #3D1A1A;
+  --color-m3Border: #2E1A1A;
+
+  --color-m3-bg: #121318;
+  --color-m3-surface: #1A1B20;
+  --color-m3-red: #FF8A80;
+  --color-m3-red-muted: #E57373;
+  --color-m3-red-dark: #3D1A1A;
+  --color-m3-border: #2E1A1A;
+}
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background-color: #121318;
+  overscroll-behavior: none;
+  -webkit-font-smoothing: antialiased;
+}

@@ -35,9 +35,9 @@ Uygulama, bir astrofotografın sahada ihtiyaç duyacağı tüm kritik araçları
 
 Uygulama, "amelelik" olarak nitelendirilen gereksiz yüklerden arındırılmış, olabildiğince minimal ve yüksek performanslı modern web teknolojileri üzerine inşa edilmiştir:
 
-* **Çekirdek:** Pure Vanilla JS (ES6+ Modules), HTML5, CSS3
-* **Tasarım Dili:** Google Material Design 3 esintili, gece çekimlerinde gözü yormayan derin kırmızı/siyah kontrastlı özel karanlık tema (Tailwind CSS)
-* **PWA & Caching:** Özel yazılmış, ağ tıkanmalarına ve zombi kilitlenmelerine karşı korumalı dinamik Service Worker (`skipWaiting` ve `clients.claim` destekli). Çevrimdışıyken arayüzün çökmesini önlemek için Tailwind CDN'ini de lokal önbelleğe alır.
+* **Çekirdek:** TypeScript, Vite, HTML5
+* **Tasarım Dili:** Google Material Design 3 esintili, gece çekimlerinde gözü yormayan derin kırmızı/siyah kontrastlı özel karanlık tema (Tailwind CSS v4 - sıfır CDN bağımlılığı)
+* **PWA & Caching:** Workbox destekli `vite-plugin-pwa`. Otomatik önbellekleme, akıllı sürüm yönetimi ve sıfır gecikmeli çevrimdışı çalışma.
 * **API'ler:** HTML5 Geolocation, Open-Meteo API, Overpass API (OpenStreetMap)
 
 ---
@@ -58,9 +58,23 @@ Projeyi bilgisayarınızda veya sunucunuzda çalıştırmak son derece basittir:
 
 1. Depoyu bilgisayarınıza klonlayın:
    ```bash
-   git clone [https://github.com/vellidr/foton-vibe.git](https://github.com/vellidr/foton-vibe.git)
+   git clone https://github.com/vellidr/foton-vibe.git
    cd foton-vibe
-2. Yerel bir sunucu (örneğin VS Code üzerindeki Live Server eklentisi) ile projeyi ayağa kaldırın.
-3. Tarayıcınızda http://127.0.0.1:5500 adresine giderek uygulamayı gizli veya normal sekmede açın
-4. Eğer hiç uğraşmak istemezseniz "https://vellidr.github.io/foton-vibe/" adresini Chrome veya Safari tarayıcınza yapıştırıp sol üstteki üç nokltadan uygulama olarak yükle seçip sorunsuzca çalıştırabilirsiniz
-5. 
+   ```
+2. Bağımlılıkları yükleyin:
+   ```bash
+   npm install
+   ```
+3. Yerel geliştirme sunucusunu başlatın (HMR destekli):
+   ```bash
+   npm run dev
+   ```
+4. Üretim (production) derlemesi almak için:
+   ```bash
+   npm run build
+   ```
+5. Üretim paketini yerelde test etmek için:
+   ```bash
+   npm run preview
+   ```
+6. Canlı PWA: [https://vellidr.github.io/foton-vibe/](https://vellidr.github.io/foton-vibe/) adresini Chrome veya Safari tarayıcınızda açıp "Uygulama Olarak Yükle" diyerek hemen deneyebilirsiniz.

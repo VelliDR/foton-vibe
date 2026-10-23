@@ -4,33 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#FF8A80">
+    <meta name="description" content="Çevrimdışı Öncelikli Mobil Astrofotografi Asistanı & Kozmik Yol Arkadaşı">
     <title>Foton Vibe</title>
-    <link rel="manifest" href="./manifest.json">
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        m3Bg: '#121318',
-                        m3Surface: '#1A1B20',
-                        m3Red: '#FF8A80',
-                        m3RedMuted: '#E57373',
-                        m3RedDark: '#3D1A1A',
-                        m3Border: '#2E1A1A'
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        body {
-            font-family: system-ui, -apple-system, sans-serif;
-            background-color: #121318;
-            overscroll-behavior: none;
-        }
-    </style>
+    <link rel="icon" type="image/png" href="./icon-192.png">
+    <link rel="apple-touch-icon" href="./icon-192.png">
 </head>
 <body class="text-m3Red min-h-screen flex">
 
@@ -54,14 +31,14 @@
                 <span class="text-[8px] mt-1 font-semibold">Rota</span>
             </button>
         </nav>
-        <div class="text-[9px] text-m3RedMuted/50" id="app-version">v1.8</div>
+        <div class="text-[9px] text-m3RedMuted/50" id="app-version">v2.0</div>
     </aside>
 
     <main class="flex-1 pl-14 min-h-screen flex flex-col">
         <header class="p-4 border-b border-m3Border flex justify-between items-center bg-m3Bg">
             <div>
                 <h1 id="page-title" class="text-sm font-semibold tracking-wider text-m3Red uppercase">GÖSTERGE PANELİ</h1>
-                <p class="text-[10px] text-m3RedMuted/70 font-mono">Modüler Build</p>
+                <p class="text-[10px] text-m3RedMuted/70 font-mono">TypeScript & Vite Build</p>
             </div>
             <div class="flex items-center gap-2">
                 <span id="gps-dot" class="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>
@@ -252,6 +229,6 @@
         </div>
     </main>
 
-    <script type="module" src="./js/app.js"></script>
+    <script type="module" src="/src/main.ts"></script>
 </body>
 </html>
