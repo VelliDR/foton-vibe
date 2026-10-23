@@ -96,4 +96,7 @@ export interface AppState {
   bortle: number;
   gpsLocked: boolean;
   celestialFilter: CelestialCategory;
+  nightMode: boolean;
+  wakeLockActive: boolean;
+  compassActive: boolean;
 }

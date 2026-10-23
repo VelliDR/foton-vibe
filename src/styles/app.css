@@ -21,4 +21,42 @@ body {
   background-color: #121318;
   overscroll-behavior: none;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* SAF OLED KIRMIZI GECE GÖRÜŞ MODU (TRUE OLED NIGHT VISION MODE) */
+body.night-mode {
+  --color-m3Bg: #000000;
+  --color-m3Surface: #080202;
+  --color-m3Red: #FF2B2B;
+  --color-m3RedMuted: #C42929;
+  --color-m3RedDark: #240404;
+  --color-m3Border: #290808;
+  background-color: #000000 !important;
+  color: #FF2B2B !important;
+}
+
+body.night-mode aside {
+  background-color: #040101 !important;
+  border-color: #290808 !important;
+}
+
+body.night-mode header {
+  background-color: #000000 !important;
+  border-color: #290808 !important;
+}
+
+body.night-mode .bg-m3Surface {
+  background-color: #080202 !important;
+  border-color: #290808 !important;
+}
+
+body.night-mode .bg-m3Bg {
+  background-color: #000000 !important;
+  border-color: #290808 !important;
+}
+
+body.night-mode .bg-m3RedDark {
+  background-color: #240404 !important;
+  border-color: #380a0a !important;
 }

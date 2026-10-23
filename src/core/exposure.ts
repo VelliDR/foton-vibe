@@ -14,6 +14,14 @@ export const SENSOR_GEOMETRIES: Record<SensorType, SensorGeometry> = {
   'med-format':  { widthMm: 43.8, aspectRatio: 1.3333 }
 };
 
+export const CROP_FACTORS: Record<SensorType, number> = {
+  'fullframe': 1.0,
+  'apsc': 1.5,
+  'apsc-canon': 1.6,
+  'm43': 2.0,
+  'med-format': 0.79
+};
+
 export function calculatePixelPitch(sensorType: string, megapixels: number | string): number {
   const mpVal = typeof megapixels === 'number' ? megapixels : parseFloat(megapixels);
   if (isNaN(mpVal) || mpVal <= 0) return 5.96;
@@ -42,6 +50,13 @@ export function calculateNpfAdvanced(
   const base_t = (16.9 * n + 25.6 * p + 13.7 * f) / f;
   const cos_factor = Math.max(Math.cos(dec * (Math.PI / 180)), 0.1);
   return base_t / cos_factor;
+}
+
+export function calculateRuleOf500(focal: number | string, sensorType: string): number {
+  const f = typeof focal === 'number' ? focal : parseFloat(focal);
+  if (isNaN(f) || f <= 0) return 0;
+  const crop = CROP_FACTORS[sensorType as SensorType] || 1.0;
+  return 500 / (f * crop);
 }
 
 export function evaluateOptics(focal: number | string, aperture: number | string): string[] {

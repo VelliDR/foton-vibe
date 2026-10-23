@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculatePixelPitch, calculateNpfAdvanced, evaluateOptics, calculateSensorRecipe } from './exposure';
+import { calculatePixelPitch, calculateNpfAdvanced, evaluateOptics, calculateSensorRecipe, calculateRuleOf500 } from './exposure';
 
 describe('Pozlama Laboratuvarı (exposure.ts)', () => {
   it('Full Frame ve APS-C için piksel pitch hesaplaması doğru olmalı', () => {
@@ -39,5 +39,12 @@ describe('Pozlama Laboratuvarı (exposure.ts)', () => {
     expect(recipe.overexposed).toBe(true);
     expect(recipe.stack).toBeGreaterThan(1);
     expect(recipe.frameTime).toBeLessThan(30);
+  });
+
+  it('500 Kuralı crop faktörüne göre hesaplanmalı', () => {
+    // 50mm Full Frame: 500 / 50 = 10s
+    expect(calculateRuleOf500(50, 'fullframe')).toBe(10);
+    // 50mm APS-C (1.5x): 500 / 75 = 6.67s
+    expect(calculateRuleOf500(50, 'apsc')).toBeCloseTo(6.67, 1);
   });
 });

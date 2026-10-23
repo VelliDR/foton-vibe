@@ -5,10 +5,28 @@
 import './styles/app.css';
 import { registerSW } from 'virtual:pwa-register';
 
-import { calculateNpfAdvanced, evaluateOptics, calculateSensorRecipe, calculatePixelPitch } from './core/exposure';
-import { getSunTimes, getMoonStatus, estimateBortleOffline, getCelestialPositions } from './core/astro';
+import {
+  calculateNpfAdvanced,
+  evaluateOptics,
+  calculateSensorRecipe,
+  calculatePixelPitch,
+  calculateRuleOf500
+} from './core/exposure';
+import { getSunTimes, getMoonStatus, estimateBortleOffline, getCelestialPositions, getCardinalDirection } from './core/astro';
 import { getRandomVibe } from './core/vibe';
 import { getWeatherData, getNearbySpots, calculateDistance } from './services/api';
+import {
+  requestWakeLock,
+  releaseWakeLock,
+  isWakeLockActive,
+  isWakeLockSupported,
+  startCompass,
+  stopCompass,
+  triggerHaptic,
+  requestOrientationPermission
+} from './core/sensors';
+import { Intervalometer, type IntervalometerStatus } from './core/intervalometer';
+import { POPULAR_CAMERAS, POPULAR_LENSES, CALIBRATION_GUIDE } from './data/gear';
 import type { AppState, TabId, Spot, CelestialCategory } from './types';
 
 export const state: AppState = {
@@ -20,7 +38,10 @@ export const state: AppState = {
   baseBortle: 3,
   bortle: 4,
   gpsLocked: false,
-  celestialFilter: 'all'
+  celestialFilter: 'all',
+  nightMode: false,
+  wakeLockActive: false,
+  compassActive: false
 };
 
 const TAB_TITLES: Record<TabId, string> = {
@@ -31,6 +52,9 @@ const TAB_TITLES: Record<TabId, string> = {
 };
 
 const TABS: TabId[] = ['dashboard', 'fikir', 'hesaplama', 'rota'];
+
+// Intervalometer Örneği
+const intervalometer = new Intervalometer(updateIntervalometerUI);
 
 function switchTab(targetTabId: TabId): void {
   if (!TABS.includes(targetTabId)) return;
@@ -106,7 +130,7 @@ async function updateAstronomicalUI(): Promise<void> {
     moonTimesElem.innerText = `Doğuş: ${moon.riseTime} | Batış: ${moon.setTime}`;
   }
 
-  // 3. Hibrit Bortle Değeri (Doğal Konum + Gerçek Zamanlı Ay İrtifası)
+  // 3. Hibrit Bortle Değeri
   const bortleResult = estimateBortleOffline(state.coords.lat, state.coords.lon, today, state.baseBortle);
   state.bortle = bortleResult.score;
 
@@ -127,7 +151,7 @@ async function updateAstronomicalUI(): Promise<void> {
     }
   }
 
-  // 5. Kozmik Göstergeleri Hesapla ve Listele
+  // 5. Kozmik Göstergeleri Listele
   renderCelestialList(today);
 }
 
@@ -201,6 +225,198 @@ function renderCelestialList(date: Date = new Date()): void {
     });
   } catch (e) {
     console.error("Kozmik göstergeler güncellenemedi:", e);
+  }
+}
+
+// --- PUSULA & SENSÖRLER ---
+async function toggleCompass(): Promise<void> {
+  const compassDisplay = document.getElementById('compass-display');
+  const btn = document.getElementById('btn-toggle-compass');
+  if (!compassDisplay || !btn) return;
+
+  if (state.compassActive) {
+    stopCompass();
+    state.compassActive = false;
+    compassDisplay.classList.add('hidden');
+    btn.classList.remove('bg-m3RedDark', 'text-m3Red');
+    btn.classList.add('bg-m3Bg', 'text-m3RedMuted');
+  } else {
+    const granted = await requestOrientationPermission();
+    if (!granted) {
+      alert("Pusula sensör izni verilmedi.");
+      return;
+    }
+
+    const started = startCompass((data) => {
+      const headingEl = document.getElementById('compass-heading');
+      const tiltEl = document.getElementById('compass-tilt');
+      const cardinalEl = document.getElementById('compass-cardinal');
+
+      if (headingEl) headingEl.innerText = `${data.heading.toFixed(0)}°`;
+      if (tiltEl) tiltEl.innerText = `↑ ${data.pitch.toFixed(0)}°`;
+      if (cardinalEl) cardinalEl.innerText = getCardinalDirection(data.heading);
+    });
+
+    if (started) {
+      state.compassActive = true;
+      compassDisplay.classList.remove('hidden');
+      btn.classList.add('bg-m3RedDark', 'text-m3Red');
+      btn.classList.remove('bg-m3Bg', 'text-m3RedMuted');
+      triggerHaptic(50);
+    } else {
+      alert("Cihazınızda pusula sensörü bulunamadı.");
+    }
+  }
+}
+
+// --- WAKE LOCK (EKRANI AÇIK TUTMA) ---
+async function toggleWakeLock(): Promise<void> {
+  const btn = document.getElementById('btn-wake-lock');
+  const icon = document.getElementById('wake-lock-icon');
+  const text = document.getElementById('wake-lock-text');
+  if (!btn || !icon) return;
+
+  if (isWakeLockActive()) {
+    await releaseWakeLock();
+    state.wakeLockActive = false;
+    btn.classList.remove('bg-amber-950/40', 'border-amber-600/50', 'text-amber-400');
+    icon.innerText = '🔆';
+    if (text) text.innerText = 'Ekran';
+  } else {
+    if (!isWakeLockSupported()) {
+      alert("Tarayıcınız Ekranı Açık Tutma (WakeLock) API'sini desteklemiyor.");
+      return;
+    }
+    const success = await requestWakeLock();
+    if (success) {
+      state.wakeLockActive = true;
+      btn.classList.add('bg-amber-950/40', 'border-amber-600/50', 'text-amber-400');
+      icon.innerText = '🔒';
+      if (text) text.innerText = 'Açık';
+      triggerHaptic(40);
+    }
+  }
+}
+
+// --- SAF OLED KIRMIZI GECE GÖRÜŞ MODU ---
+function toggleNightMode(): void {
+  state.nightMode = !state.nightMode;
+  document.body.classList.toggle('night-mode', state.nightMode);
+  localStorage.setItem('foton_night_mode', state.nightMode ? '1' : '0');
+  triggerHaptic(40);
+
+  const btn = document.getElementById('btn-night-mode');
+  if (btn) {
+    if (state.nightMode) {
+      btn.classList.add('border-red-600', 'bg-red-950/50');
+    } else {
+      btn.classList.remove('border-red-600', 'bg-red-950/50');
+    }
+  }
+}
+
+// --- INTERVALOMETER UI GÜNCELLEMESİ ---
+function updateIntervalometerUI(status: IntervalometerStatus): void {
+  const badge = document.getElementById('timer-state-badge');
+  const frameInd = document.getElementById('timer-frame-indicator');
+  const countdown = document.getElementById('timer-countdown');
+  const totalRem = document.getElementById('timer-total-remaining');
+
+  if (!badge || !frameInd || !countdown || !totalRem) return;
+
+  const formatMinSec = (sec: number): string => {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  };
+
+  frameInd.innerText = `Kare: ${status.currentFrame} / ${status.totalFrames}`;
+  countdown.innerText = formatMinSec(status.remainingFrameSeconds);
+  totalRem.innerText = `Toplam Kalan: ${formatMinSec(status.totalRemainingSeconds)}`;
+
+  if (status.state === 'idle') {
+    badge.innerText = 'Hazır';
+    badge.className = 'px-2 py-0.5 rounded-full text-[9px] font-mono bg-m3Bg text-m3RedMuted border border-m3Border';
+  } else if (status.state === 'lead_in') {
+    badge.innerText = `Hazırlık: ${status.remainingFrameSeconds}s`;
+    badge.className = 'px-2 py-0.5 rounded-full text-[9px] font-mono bg-amber-950/60 text-amber-400 border border-amber-600/50 animate-pulse';
+  } else if (status.state === 'exposing') {
+    badge.innerText = `POZLANIYOR (${status.remainingFrameSeconds}s)`;
+    badge.className = 'px-2 py-0.5 rounded-full text-[9px] font-mono bg-red-950/70 text-red-400 border border-red-600 font-bold';
+  } else if (status.state === 'resting') {
+    badge.innerText = `Tampon Yazılıyor (${status.remainingFrameSeconds}s)`;
+    badge.className = 'px-2 py-0.5 rounded-full text-[9px] font-mono bg-emerald-950/60 text-emerald-400 border border-emerald-600/50';
+  } else if (status.state === 'completed') {
+    badge.innerText = '🎉 Tamamlandı!';
+    badge.className = 'px-2 py-0.5 rounded-full text-[9px] font-mono bg-emerald-900 text-emerald-200 border border-emerald-500 font-bold';
+    countdown.innerText = 'BİTTİ';
+  }
+}
+
+function startIntervalometerFromInputs(): void {
+  const framesInput = document.getElementById('input-timer-frames') as HTMLInputElement | null;
+  const expInput = document.getElementById('input-timer-exp') as HTMLInputElement | null;
+  const restInput = document.getElementById('input-timer-rest') as HTMLInputElement | null;
+
+  const frames = framesInput ? parseInt(framesInput.value, 10) : 20;
+  const exp = expInput ? parseFloat(expInput.value) : 15;
+  const rest = restInput ? parseInt(restInput.value, 10) : 2;
+
+  intervalometer.start(frames, exp, rest);
+}
+
+function stopIntervalometer(): void {
+  intervalometer.stop();
+  triggerHaptic(50);
+}
+
+// --- PRESETS & KALİBRASYON KONTROL LİSTESİ ---
+function initPresetsUI(): void {
+  const camSelect = document.getElementById('preset-camera') as HTMLSelectElement | null;
+  const lensSelect = document.getElementById('preset-lens') as HTMLSelectElement | null;
+
+  if (camSelect) {
+    camSelect.innerHTML = POPULAR_CAMERAS.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    camSelect.addEventListener('change', () => {
+      const selected = POPULAR_CAMERAS.find(c => c.id === camSelect.value);
+      if (selected && selected.id !== 'custom') {
+        const sensorSelect = document.getElementById('select-sensor') as HTMLSelectElement | null;
+        const mpInput = document.getElementById('input-mp') as HTMLInputElement | null;
+        if (sensorSelect) sensorSelect.value = selected.sensorType;
+        if (mpInput) mpInput.value = selected.megapixels.toString();
+        updateCalculatedPitchUI();
+        handleExposureCalculation();
+      }
+    });
+  }
+
+  if (lensSelect) {
+    lensSelect.innerHTML = POPULAR_LENSES.map(l => `<option value="${l.id}">${l.name}</option>`).join('');
+    lensSelect.addEventListener('change', () => {
+      const selected = POPULAR_LENSES.find(l => l.id === lensSelect.value);
+      if (selected && selected.id !== 'custom') {
+        const focalInput = document.getElementById('input-focal') as HTMLInputElement | null;
+        const apertureInput = document.getElementById('input-aperture') as HTMLInputElement | null;
+        if (focalInput) focalInput.value = selected.focal.toString();
+        if (apertureInput) apertureInput.value = selected.aperture.toString();
+        handleExposureCalculation();
+      }
+    });
+  }
+
+  // Kalibrasyon Rehberi Render
+  const calibList = document.getElementById('calibration-checklist');
+  if (calibList) {
+    calibList.innerHTML = CALIBRATION_GUIDE.map(item => `
+      <label class="flex items-start gap-2.5 p-2.5 rounded-xl bg-m3Bg border border-m3Border/60 cursor-pointer hover:border-m3Red/50 transition-colors">
+        <input type="checkbox" class="mt-1 accent-[#FF8A80] rounded">
+        <div>
+          <div class="font-bold text-m3Red font-sans text-xs">${item.title}</div>
+          <p class="text-[10px] text-m3RedMuted/80 font-sans mt-0.5">${item.description}</p>
+          <div class="text-[9px] text-amber-400/90 font-mono mt-1 bg-amber-950/20 px-1.5 py-0.5 rounded inline-block">💡 ${item.recipe}</div>
+        </div>
+      </label>
+    `).join('');
   }
 }
 
@@ -378,16 +594,25 @@ function handleExposureCalculation(): void {
 
   const pitch = calculatePixelPitch(sensorType, megapixels);
   const t = calculateNpfAdvanced(focal, aperture, pitch, declination);
+  const rule500 = calculateRuleOf500(focal, sensorType);
   const warnings = evaluateOptics(focal, aperture);
   const recipe = calculateSensorRecipe(t, aperture, state.bortle);
 
   const npfOut = document.getElementById('output-npf');
+  const out500 = document.getElementById('output-500');
   const isoOut = document.getElementById('output-iso');
   const stackOut = document.getElementById('output-stack');
 
-  if (npfOut) npfOut.innerText = `${t.toFixed(2)}s`;
+  if (npfOut) npfOut.innerText = `${t.toFixed(1)}s`;
+  if (out500) out500.innerText = `${rule500.toFixed(1)}s`;
   if (isoOut) isoOut.innerText = `ISO ${recipe.iso}`;
   if (stackOut) stackOut.innerText = `${recipe.stack} Kare`;
+
+  // Intervalometer girdi kutucuklarını otomatik güncelle
+  const timerExp = document.getElementById('input-timer-exp') as HTMLInputElement | null;
+  const timerFrames = document.getElementById('input-timer-frames') as HTMLInputElement | null;
+  if (timerExp) timerExp.value = Math.max(1, Math.round(t)).toString();
+  if (timerFrames) timerFrames.value = Math.max(1, recipe.stack).toString();
 
   const warningsContainer = document.getElementById('output-warnings');
   if (warningsContainer) {
@@ -401,7 +626,7 @@ function handleExposureCalculation(): void {
     if (recipe.overexposed) {
       const pOver = document.createElement('p');
       pOver.className = "text-[10px] text-amber-500 font-bold leading-relaxed";
-      pOver.innerText = `⚠️ AŞIRI POZLAMA KORUMASI: Bu ışık kirliliğinde ${t.toFixed(2)}s tek kare pozlama sensörü patlatacaktır. Toplam süreyi ${recipe.stack} kareye böldük (Kare başına ${recipe.frameTime.toFixed(1)}s pozlayın).`;
+      pOver.innerText = `⚠️ AŞIRI POZLAMA KORUMASI: Bu ışık kirliliğinde ${t.toFixed(1)}s tek kare pozlama sensörü patlatacaktır. Toplam süreyi ${recipe.stack} kareye böldük (Kare başına ${recipe.frameTime.toFixed(1)}s pozlayın).`;
       warningsContainer.appendChild(pOver);
     }
 
@@ -455,6 +680,12 @@ function initEventListeners(): void {
     });
   });
 
+  bindClick('btn-toggle-compass', toggleCompass);
+  bindClick('btn-wake-lock', toggleWakeLock);
+  bindClick('btn-night-mode', toggleNightMode);
+  bindClick('btn-timer-start', startIntervalometerFromInputs);
+  bindClick('btn-timer-stop', stopIntervalometer);
+
   bindClick('btn-location-gps', requestLocation);
   bindClick('btn-location-apply', applyManualCoordinates);
   bindClick('btn-calc-exposure', handleExposureCalculation);
@@ -472,6 +703,12 @@ function initApp(): void {
     state.baseBortle = parseInt(envElem.value, 10);
   }
 
+  // Gece modu tercihi yükle
+  if (localStorage.getItem('foton_night_mode') === '1') {
+    toggleNightMode();
+  }
+
+  initPresetsUI();
   initEventListeners();
   applyManualCoordinates(); 
   updateCalculatedPitchUI();
