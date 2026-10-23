@@ -1,80 +1,130 @@
 # 🌌 Foton Vibe
 
-> **Çevrimdışı Öncelikli (Offline-First) Mobil Astrofotografi Asistanı & Kozmik Yol Arkadaşı**
+<p align="center">
+  <img src="./public/icon-192.png" alt="Foton Vibe Logo" width="100" height="100" style="border-radius: 24px;" />
+</p>
 
-Foton Vibe; zifiri karanlık dağ başlarında, köyde veya internet erişiminin olmadığı en ücra köşelerde bile astrofotograflara rehberlik etmek için tasarlanmış, hafif, şık ve son derece optimize bir Çevrimdışı Öncelikli PWA (Progressive Web App) uygulamasıdır. 
+<p align="center">
+  <strong>Çevrimdışı Öncelikli (Offline-First) Mobil Astrofotografi Asistanı & Kozmik Yol Arkadaşı</strong>
+</p>
 
-Özellikle analog merceklerin (örneğin efsanevi 1984 Helios 44M-4 gibi) kusurlarındaki o büyüleyici karakteri arayan ve gökyüzünü sadece bir matematiksel veri olarak değil, felsefi bir tuval olarak gören fotoğrafçılar için geliştirilmiştir.
+<p align="center">
+  <a href="https://github.com/VelliDR/foton-vibe/actions/workflows/deploy.yml">
+    <img src="https://github.com/VelliDR/foton-vibe/actions/workflows/deploy.yml/badge.svg" alt="Deploy to GitHub Pages" />
+  </a>
+  <img src="https://img.shields.io/badge/PWA-Ready-FF8A80?style=flat&logo=pwa&logoColor=white" alt="PWA Ready" />
+  <img src="https://img.shields.io/badge/TypeScript-5.7-blue?style=flat&logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Vite-6.0-646CFF?style=flat&logo=vite&logoColor=white" alt="Vite" />
+  <img src="https://img.shields.io/badge/TailwindCSS-v4.0-38B2AC?style=flat&logo=tailwind-css&logoColor=white" alt="Tailwind CSS v4" />
+  <img src="https://img.shields.io/badge/License-MIT-emerald?style=flat" alt="MIT License" />
+</p>
+
+<p align="center">
+  <a href="https://vellidr.github.io/foton-vibe/"><strong>Canlı PWA Uygulamasını Aç ➔</strong></a>
+</p>
+
+---
+
+## 📖 Felsefe & Vizyon
+
+**Foton Vibe**; elektriğin, baz istasyonunun ve internetin olmadığı zifiri karanlık dağ başlarında, krater kenarlarında veya ücra yaylalarda astrofotograflara rehberlik etmek üzere inşa edilmiştir.
+
+Özellikle eski Sovyet optiklerinin (efsanevi 1984 **Helios 44M-4** gibi) o kusurlu ama organik girdap bokeh karakterini arayan, gökyüzünü salt bir matematiksel piksel matrisi değil, felsefi bir tuval olarak gören fotoğrafçılar için sıfır gecikmeli bir saha yol arkadaşıdır.
+
+> [!NOTE]
+> **Tamamen Çevrimdışı (100% Offline-First):** Tüm astronomik koordinatlar, alacakaranlık pencereleri, Ay evreleri ve NPF pozlama formülleri yerel cihaz üzerinde derlenmiş matematiksel motorlarla hesaplanır.
 
 ---
 
 ## 📸 Temel Özellikler
 
-Uygulama, bir astrofotografın sahada ihtiyaç duyacağı tüm kritik araçları tek bir potada eritir:
-
-### 1. 🌌 Gösterge Paneli (Dashboard)
-* **Astronomik Zaman Motoru:** İnternet bağlantısı olmasa bile tamamen yerel matematiksel formüllerle Güneş batımını ve Samanyolu çekimi için en kritik an olan **Astronomik Karanlık** başlangıcını hesaplar.
-* **Dinamik Ay Evresi:** Ay'ın anlık aydınlanma yüzdesini ve gökyüzündeki aktif konumunu simüle eder.
-* **Canlı Hava Durumu:** Open-Meteo entegrasyonu ile rüzgar hızını ve bulutluluk oranını anlık olarak ekrana yansıtır.
-* **Yapay Işık Kalibrasyonlu Hibrit Bortle Tahmini:** Sadece Ay ışığına bağımlı kalmaz. Kullanıcının seçtiği çevre tipine (Zifiri karanlık, kırsal/köy, kasaba, büyük şehir) göre Ay'ın o anki ışık gücünü matematiksel olarak ekleyerek kusursuz bir anlık ışık kirliliği (Bortle) analizi yapar.
-
-### 2. ⏱️ Gelişmiş NPF Pozlama Laboratuvarı
-* **Piksel Boyutu Hassasiyeti:** Sensör tipine (Full Frame, APS-C, Micro Four Thirds vb.) ve megapiksel değerine göre kamera sensörünün gerçek mikron boyutunu hesaplar.
-* **İleri Düzey NPF Hesaplama:** Yıldızların uzamasını (star trailing) engellemek için odak uzaklığı, diyafram, piksel boyutu ve hedef bölgenin göksel sapmasını (declination/kutup yakınlığı) hesaba katan gelişmiş NPF formülünü kullanır.
-* **Aşırı Pozlama Koruması (Overexposure Protection):** Işık kirliliği olan bölgelerde uzun süre tek kare pozlama yapıldığında sensörün patlamasını engellemek için toplam süreyi güvenli alt saniyelere böler ve ideal istifleme (stacking) reçetesi sunar.
-
-### 3. ✍️ Foton Esintisi (Vibe)
-* **Kozmik İlham:** Geliştiricinin felsefi dünyasından süzülen, anlık zamana ve kozmik saate göre değişen kompozisyon fikirleri ve sanatsal hatırlatıcılar sunar. Fotoğrafçının sadece deklanşöre basmasını değil, sahneyi hissetmesini amaçlar.
-
-### 4. 📍 Rota Keşif Dedektörü
-* **Overpass API Entegrasyonu:** Bulunduğun koordinatların 5 km yakınındaki tarihi kalıntıları, antik harabeleri, kaleleri ve ışık kirliliğinden uzak tepe noktalarını tarayarak ön plana (foreground) yerleştirebileceğin mükemmel kompozisyon noktalarını keşfeder.
+### 1. 🌌 Gösterge Paneli (Dashboard & Astrometri)
+* **Astronomik Zaman & Karanlık Penceresi:** NASA/JPL standartlarındaki `astronomy-engine` ile Güneş batımını, Samanyolu ve derin uzay için en kritik eşik olan **Astronomik Karanlık (-18°)** başlangıcını ve sabah alacakaranlık bitişini hesaplar. Toplam kesintisiz karanlık süresini dakika hassasiyetinde verir.
+* **Dinamik Ay İrtifası ve Doğuş/Batış:** Ay'ın gökyüzündeki gerçek zamanlı irtifasını (altitude), pusula yönünü (azimuth), anlık aydınlanma yüzdesini ve o günkü doğuş/batış saatlerini sunar.
+* **Gerçekçi Hibrit Bortle Simülasyonu:** Ay ufkun altındayken gökyüzünü kirletmez. Ay doğduğunda ise gökteki yüksekliğine ve evresine göre ışık kirliliği puanını (Bortle 1-9) dinamik olarak kalibre eder.
+* **🔭 Zengin Kozmik Katalog (10 Hedef) & Filtreler:**
+  - 🌌 *Samanyolu Çekirdeği (Yay A\*)*
+  - 🌀 *Andromeda Galaksisi (M31)*
+  - 🌺 *Orion Bulutsusu (M42)*
+  - ✨ *Ülker Açık Kümesi (Pleiades - M45)*
+  - ⭐ *Kutup Yıldızı (Polaris)*
+  - 🌙 *Ay* & 🪐 *Jüpiter* & 🪐 *Satürn*
+  - 💎 *Vega* & 🌟 *Sirius*
+  - Canlı kategori filtreleme (`Tümü`, `Derin Uzay`, `Gezegen/Ay`, `Yıldız`) ve ufkun üstündeki hedefleri en tepede gösteren akıllı sıralama.
+* **🧭 Canlı Pusula & Gökyüzü Radarı (`DeviceOrientation`):** Cihazı göğe doğrulttuğunda anlık pusula yönünü, eğim açısını ve ana yönü göstererek hedef bulmayı kolaylaştırır.
 
 ---
 
-## 🛠️ Teknik Altyapı (Tech Stack)
-
-Uygulama, "amelelik" olarak nitelendirilen gereksiz yüklerden arındırılmış, olabildiğince minimal ve yüksek performanslı modern web teknolojileri üzerine inşa edilmiştir:
-
-* **Çekirdek:** TypeScript, Vite, HTML5
-* **Tasarım Dili:** Google Material Design 3 esintili, gece çekimlerinde gözü yormayan derin kırmızı/siyah kontrastlı özel karanlık tema (Tailwind CSS v4 - sıfır CDN bağımlılığı)
-* **PWA & Caching:** Workbox destekli `vite-plugin-pwa`. Otomatik önbellekleme, akıllı sürüm yönetimi ve sıfır gecikmeli çevrimdışı çalışma.
-* **API'ler:** HTML5 Geolocation, Open-Meteo API, Overpass API (OpenStreetMap)
-
----
-
-## 🤖 Yapay Zeka (AI) İş Birliği Bildirisi
-
-Bu proje, geleneksel yazılım süreçlerinin dışına çıkılarak **insan sezgisi/fotoğraf tutkusu ile Yapay Zeka (Gemini) mühendisliğinin sıfır hata hedefli ortaklığıyla** geliştirilmiştir.
-
-* **Fikir ve Mimari:** Yazılımcının doğada, sahada ve dağ başındaki pratik ihtiyaçlarından, analog mercek tutkusundan doğmuştur.
-* **Kodlama ve Optimizasyon:** Projenin tüm modüler JavaScript yapısı, Service Worker'ın kurşun geçirmez çevrimdışı önbellek yönetimi, karmaşık astronomik formüllerin hata payı olmadan JS ortamına dökülmesi ve tarayıcı kilitlenmelerinin çözümü, **Gemini** ile birebir kod inceleme (code-review) ve saniyeler içinde lokal hata analizi yapılarak inşa edilmiştir.
-* **Sonuç:** Tek bir satır gereksiz kütüphane veya ağır framework (React/Vue/Angular) kullanılmadan, sadece insan zihni ve yapay zeka hızının birleşimiyle 3 saat gibi kısa bir sürede sahada tıkır tıkır çalışan, taşınabilir bir PWA üretilmiştir.
+### 2. ⏱️ Gelişmiş Pozlama & Saha Laboratuvarı
+* **Gelişmiş NPF Kuralı:** Yıldızların uzamasını (star trailing) engellemek için sensör mikron boyutu, odak uzaklığı, diyafram ve göksel sapma (declination) açılarını hesaba katan bilimsel formülü uygular.
+* **⚖️ 500 Kuralı vs. NPF Kıyaslaması:** Eski 500 kuralının yüksek megapikselli sensörlerde yarattığı uzama riskini NPF ile kıyaslayarak gösterir.
+* **🎯 Hızlı Ekipman Ön Tanımları (Preset):** Sony A7 serisi, Canon R/Rebel serisi, Fuji X-T, M43 gövdeler ile Helios 44M, Jupiter-9, Samyang 14mm f/2.8, Samyang 135mm f/2.0 gibi efsane lensleri tek tıkla yükler.
+* **Aşırı Pozlama Koruması (Overexposure Protection):** Işık kirliliği olan yerlerde tek karenin patlamasını engeller; güvenli alt sürelere bölerek istifleme (stacking) reçetesi sunar.
+* **⏱️ Saha Deklanşör Zamanlayıcısı (Intervalometer):**
+  - Web Audio API ile harici mp3 gerektirmeyen mekanik deklanşör sesleri sentezler.
+  - Titreşim (Vibration API) haptic geri bildirimiyle karanlıkta ekrana bakmadan pozlama başlangıç ve bitişini hissettirir.
+  - Kare sayısı, pozlama süresi ve tampon bellek dinlenme aralığını sayar.
+* **📋 Kalibrasyon Kareleri Kontrol Listesi:** Sahadan dönmeden önce Light, Dark, Flat ve Bias karelerinin eksiksiz alınmasını garanti eden interaktif kontrol listesi.
 
 ---
 
-## 🚀 Kurulum ve Yerel Çalıştırma
+### 3. 🔴 Saha Ergonomisi & Donanım Araçları
+* **Saf OLED Kırmızı Gece Modu:** Tek tıkla tüm ekranı saf siyah (`#000000`) ve monokrom kırmızıya (`#FF2B2B`) geçirir; fotoğrafçının göz adaptasyonunu (rodopsin) korur.
+* **🔆 Ekranı Açık Tutma (Screen Wake Lock API):** Çekim beklerken veya üçayak kurarken ekranın kapanıp telefonun kilitlenmesini önler.
+* **✍️ Foton Esintisi (Vibe):** Günün zaman dilimine ve kozmik saate göre değişen felsefi kompozisyon fikirleri ve sanatsal hatırlatıcılar sunar.
+* **📍 Rota Keşif Dedektörü:** Overpass API (OSM) üzerinden 5 km çevrendeki tarihi kalıntıları, harabeleri ve tepe noktalarını tarar.
 
-Projeyi bilgisayarınızda veya sunucunuzda çalıştırmak son derece basittir:
+---
 
-1. Depoyu bilgisayarınıza klonlayın:
-   ```bash
-   git clone https://github.com/vellidr/foton-vibe.git
-   cd foton-vibe
-   ```
-2. Bağımlılıkları yükleyin:
-   ```bash
-   npm install
-   ```
-3. Yerel geliştirme sunucusunu başlatın (HMR destekli):
-   ```bash
-   npm run dev
-   ```
-4. Üretim (production) derlemesi almak için:
-   ```bash
-   npm run build
-   ```
-5. Üretim paketini yerelde test etmek için:
-   ```bash
-   npm run preview
-   ```
-6. Canlı PWA: [https://vellidr.github.io/foton-vibe/](https://vellidr.github.io/foton-vibe/) adresini Chrome veya Safari tarayıcınızda açıp "Uygulama Olarak Yükle" diyerek hemen deneyebilirsiniz.
+## 🛠️ Teknik Mimari
+
+| Katman | Teknoloji | Amaç |
+| :--- | :--- | :--- |
+| **Dil** | **TypeScript 5.7** | Tip güvenliği, sıfır `NaN` / runtime hatası |
+| **Derleyici** | **Vite 6** | Anında HMR, 170ms üretim derlemesi |
+| **Tasarım** | **Tailwind CSS v4** | Derlenmiş sıfır-CDN mimarisi, 14 KB minified CSS |
+| **PWA Motoru** | **vite-plugin-pwa (Workbox)** | Otomatik precache, varlık hash'leme, kusursuz çevrimdışı çalışma |
+| **Astrometri** | **astronomy-engine** | NASA standartlarında Güneş, Ay ve Gezegen efemerisleri |
+| **Donanım API'leri** | **WakeLock, DeviceOrientation, Web Audio, Vibration** | Saha ergonomisi ve canlı fiziksel sensörler |
+| **Test** | **Vitest** | Astronomik matematik ve pozlama algoritmaları için birim testleri |
+
+---
+
+## 🚀 Yerel Geliştirme ve Çalıştırma
+
+Projeyi bilgisayarınızda yerel olarak çalıştırmak son derece basittir:
+
+```bash
+# 1. Depoyu klonlayın
+git clone https://github.com/VelliDR/foton-vibe.git
+cd foton-vibe
+
+# 2. Bağımlılıkları yükleyin
+npm install
+
+# 3. Sıcak yenilemeli (HMR) geliştirme sunucusunu başlatın
+npm run dev
+
+# 4. Birim testlerini çalıştırın
+npm test
+
+# 5. Üretim paketi derleyin
+npm run build
+
+# 6. Üretim derlemesini yerelde önizleyin
+npm run preview
+```
+
+---
+
+## 📲 PWA Olarak Telefona Yükleme
+
+1. Mobil tarayıcınızda (Chrome veya Safari) **[https://vellidr.github.io/foton-vibe/](https://vellidr.github.io/foton-vibe/)** adresini açın.
+2. Tarayıcı menüsünden **"Ana Ekrana Ekle"** veya **"Uygulama Olarak Yükle"** seçeneğine dokunun.
+3. Artık internet bağlantınız olmasa bile dağ başında doğrudan ana ekranınızdan bağımsız bir yerel uygulama gibi kullanabilirsiniz.
+
+---
+
+## 📄 Lisans
+
+Bu proje [MIT Lisansı](LICENSE) kapsamında açık kaynak olarak geliştirilmiştir. Gökyüzü herkesindir. 🌌
