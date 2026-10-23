@@ -9,7 +9,7 @@ import { calculateNpfAdvanced, evaluateOptics, calculateSensorRecipe, calculateP
 import { getSunTimes, getMoonStatus, estimateBortleOffline, getCelestialPositions } from './core/astro';
 import { getRandomVibe } from './core/vibe';
 import { getWeatherData, getNearbySpots, calculateDistance } from './services/api';
-import type { AppState, TabId, Spot } from './types';
+import type { AppState, TabId, Spot, CelestialCategory } from './types';
 
 export const state: AppState = {
   currentTab: 'dashboard',
@@ -19,7 +19,8 @@ export const state: AppState = {
   },
   baseBortle: 3,
   bortle: 4,
-  gpsLocked: false
+  gpsLocked: false,
+  celestialFilter: 'all'
 };
 
 const TAB_TITLES: Record<TabId, string> = {
@@ -79,21 +80,33 @@ function updateVibeUI(): void {
 async function updateAstronomicalUI(): Promise<void> {
   const today = new Date();
 
-  // Güneş Zamanları
+  // 1. Güneş ve Astronomik Karanlık Penceresi
   const sunTimes = getSunTimes(state.coords.lat, state.coords.lon, today);
   const sunSetElem = document.getElementById('sun-set');
   const darkStartElem = document.getElementById('dark-start');
-  if (sunSetElem) sunSetElem.innerText = sunTimes.sunset;
-  if (darkStartElem) darkStartElem.innerText = sunTimes.astroDark;
+  const darkDurationElem = document.getElementById('dark-duration');
 
-  // Ay Durumu
-  const moon = getMoonStatus(today);
+  if (sunSetElem) sunSetElem.innerText = sunTimes.sunset;
+  if (darkStartElem) darkStartElem.innerText = `${sunTimes.astroDarkStart} → ${sunTimes.astroDarkEnd}`;
+  if (darkDurationElem) darkDurationElem.innerText = `✨ ${sunTimes.darkDurationText}`;
+
+  // 2. Ay Durumu, İrtifa ve Doğuş/Batış Saatleri
+  const moon = getMoonStatus(state.coords.lat, state.coords.lon, today);
   const moonPhaseElem = document.getElementById('moon-phase');
+  const moonTimesElem = document.getElementById('moon-times');
+
   if (moonPhaseElem) {
-    moonPhaseElem.innerText = `${moon.phaseName} (%${moon.phasePercent})`;
+    const altText = moon.isMoonUp 
+      ? `↑ ${moon.altitude.toFixed(0)}° (Gökte)`
+      : `↓ Ufkun Altında`;
+    moonPhaseElem.innerText = `${moon.phaseName} (%${moon.phasePercent}) • ${altText}`;
   }
 
-  // Bortle Değeri
+  if (moonTimesElem) {
+    moonTimesElem.innerText = `Doğuş: ${moon.riseTime} | Batış: ${moon.setTime}`;
+  }
+
+  // 3. Hibrit Bortle Değeri (Doğal Konum + Gerçek Zamanlı Ay İrtifası)
   const bortleResult = estimateBortleOffline(state.coords.lat, state.coords.lon, today, state.baseBortle);
   state.bortle = bortleResult.score;
 
@@ -102,57 +115,92 @@ async function updateAstronomicalUI(): Promise<void> {
     bortleElem.innerText = `Bortle ${bortleResult.score} (${bortleResult.reason})`;
   }
 
-  // Hava Tahmini
+  // 4. Canlı Hava Tahmini
   const cloudElem = document.getElementById('cloud-status');
   if (cloudElem) {
     cloudElem.innerText = "Yükleniyor...";
     try {
       const weather = await getWeatherData(state.coords.lat, state.coords.lon);
       cloudElem.innerText = `%${weather.clouds} Bulut, ${weather.wind} km/s Rüzgar`;
-    } catch (err) {
+    } catch {
       cloudElem.innerText = "Hava Tahmini Alınamadı";
-      console.error(err);
     }
   }
 
-  // Kozmik Göstergeleri Hesapla ve Yazdır
+  // 5. Kozmik Göstergeleri Hesapla ve Listele
+  renderCelestialList(today);
+}
+
+function renderCelestialList(date: Date = new Date()): void {
   const celestialList = document.getElementById('celestial-list');
-  if (celestialList) {
-    try {
-      const positions = getCelestialPositions(state.coords.lat, state.coords.lon, today);
-      celestialList.innerHTML = "";
+  if (!celestialList) return;
 
-      const getCardinal = (az: number): string => {
-        const dirs = ['K', 'KD', 'D', 'GD', 'G', 'GB', 'B', 'KB'];
-        return dirs[Math.round(az / 45) % 8];
-      };
+  try {
+    const positions = getCelestialPositions(state.coords.lat, state.coords.lon, date, state.celestialFilter);
+    celestialList.innerHTML = "";
 
-      positions.forEach(pos => {
-        const row = document.createElement('div');
-        row.className = "flex justify-between items-center text-xs font-mono py-1.5 border-b border-m3Border/20 last:border-0";
-        
-        const nameSpan = document.createElement('span');
-        nameSpan.className = "flex items-center gap-2";
-        nameSpan.innerHTML = `<span>${pos.icon}</span> <span class="font-sans font-semibold text-m3Red">${pos.name}</span>`;
-
-        const valSpan = document.createElement('span');
-        if (pos.isVisible) {
-          const cardinal = getCardinal(pos.az);
-          valSpan.innerHTML = `
-            <span class="text-emerald-500 font-bold">↑ ${pos.alt.toFixed(1)}°</span> 
-            <span class="text-m3RedMuted/70 text-[10px]">(${cardinal} - ${pos.az.toFixed(0)}°)</span>
-          `;
-        } else {
-          valSpan.innerHTML = `<span class="text-gray-600 italic">Ufkun Altında (${pos.alt.toFixed(1)}°)</span>`;
-        }
-
-        row.appendChild(nameSpan);
-        row.appendChild(valSpan);
-        celestialList.appendChild(row);
-      });
-    } catch (e) {
-      console.error("Kozmik göstergeler güncellenemedi:", e);
+    if (positions.length === 0) {
+      celestialList.innerHTML = `<div class="text-center py-4 text-xs text-m3RedMuted/50 italic">Bu filtrede hedef bulunamadı.</div>`;
+      return;
     }
+
+    positions.forEach(pos => {
+      const row = document.createElement('div');
+      row.className = "flex justify-between items-center text-xs font-mono py-2 px-2.5 rounded-xl bg-m3Bg/60 border border-m3Border/40 transition-colors";
+
+      const leftDiv = document.createElement('div');
+      leftDiv.className = "flex items-center gap-2.5 min-w-0 pr-2";
+
+      const iconSpan = document.createElement('span');
+      iconSpan.className = "text-base flex-shrink-0";
+      iconSpan.textContent = pos.icon;
+
+      const textDiv = document.createElement('div');
+      textDiv.className = "truncate";
+
+      const nameP = document.createElement('div');
+      nameP.className = "font-sans font-semibold text-m3Red text-xs truncate";
+      nameP.textContent = pos.name;
+
+      const descP = document.createElement('div');
+      descP.className = "text-[9px] text-m3RedMuted/60 font-sans truncate";
+      descP.textContent = pos.description || "";
+
+      textDiv.appendChild(nameP);
+      if (pos.description) textDiv.appendChild(descP);
+      leftDiv.appendChild(iconSpan);
+      leftDiv.appendChild(textDiv);
+
+      const rightDiv = document.createElement('div');
+      rightDiv.className = "text-right flex-shrink-0";
+
+      if (pos.isVisible) {
+        rightDiv.innerHTML = `
+          <div class="text-emerald-400 font-bold text-xs flex items-center justify-end gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>↑ ${pos.alt.toFixed(1)}°</span>
+          </div>
+          <div class="text-m3RedMuted/70 text-[10px]">
+            ${pos.cardinal} (${pos.az.toFixed(0)}°)
+          </div>
+        `;
+      } else {
+        rightDiv.innerHTML = `
+          <div class="text-gray-500 italic text-xs">
+            Ufkun Altında
+          </div>
+          <div class="text-gray-600 text-[9px]">
+            ${pos.alt.toFixed(1)}°
+          </div>
+        `;
+      }
+
+      row.appendChild(leftDiv);
+      row.appendChild(rightDiv);
+      celestialList.appendChild(row);
+    });
+  } catch (e) {
+    console.error("Kozmik göstergeler güncellenemedi:", e);
   }
 }
 
@@ -387,6 +435,24 @@ function initEventListeners(): void {
       state.baseBortle = parseInt(target.value, 10);
       updateAstronomicalUI();
     }
+  });
+
+  // Kozmik Göstergeler Filtre Butonları
+  const filterBtns = document.querySelectorAll('.filter-btn');
+  filterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const filter = btn.getAttribute('data-filter') as CelestialCategory;
+      if (filter) {
+        state.celestialFilter = filter;
+        filterBtns.forEach(b => {
+          b.classList.remove('bg-m3RedDark', 'text-m3Red');
+          b.classList.add('bg-m3Bg', 'text-m3RedMuted');
+        });
+        btn.classList.add('bg-m3RedDark', 'text-m3Red');
+        btn.classList.remove('bg-m3Bg', 'text-m3RedMuted');
+        renderCelestialList();
+      }
+    });
   });
 
   bindClick('btn-location-gps', requestLocation);

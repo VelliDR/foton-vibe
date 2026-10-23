@@ -1,137 +1,226 @@
 /**
- * ASTRO.TS - Gök Cisimleri ve Astronomik Zaman Hesaplama Modülü
+ * ASTRO.TS - Gelişmiş Astronomi & Hassas Gözlem Motoru (Astronomy Engine Entegrasyonu)
  */
 
-import type { CelestialObject, CelestialPosition, MoonStatus, BortleOfflineResult, SunTimes } from '../types';
+import * as Astronomy from 'astronomy-engine';
+import type {
+  CelestialCategory,
+  CelestialObject,
+  CelestialPosition,
+  MoonStatus,
+  BortleOfflineResult,
+  SunTimes
+} from '../types';
 
-const RAD = Math.PI / 180;
-const DEG = 180 / Math.PI;
-
-export const safeMod = (n: number, m: number): number => ((n % m) + m) % m;
-export const normalizeAngle = (angle: number): number => safeMod(angle, 360);
-
-// KOZMİK KILAVUZ HEDEFLERİ (J2000 Koordinatları)
-export const CELESTIAL_OBJECTS: CelestialObject[] = [
-  { id: 'milkyway', name: "Samanyolu Çekirdeği", ra: 266.42, dec: -29.01, icon: "🌌" },
-  { id: 'polaris', name: "Kutup Yıldızı (Polaris)", ra: 37.95, dec: 89.26, icon: "⭐" },
-  { id: 'vega', name: "Vega", ra: 279.23, dec: 38.78, icon: "💎" },
-  { id: 'sirius', name: "Sirius (Akyıldız)", ra: 101.29, dec: -16.72, icon: "✨" }
+// ZENGİN KOZMİK KILAVUZ HEDEFLERİ
+export const CELESTIAL_CATALOG: CelestialObject[] = [
+  {
+    id: 'milkyway',
+    name: "Samanyolu Çekirdeği",
+    icon: "🌌",
+    category: "dso",
+    type: "fixed",
+    raDeg: 266.42,
+    decDeg: -29.01,
+    description: "Galaktik merkez, en yoğun yıldız alanı (Yay A*)"
+  },
+  {
+    id: 'andromeda',
+    name: "Andromeda Galaksisi (M31)",
+    icon: "🌀",
+    category: "dso",
+    type: "fixed",
+    raDeg: 10.68,
+    decDeg: 41.27,
+    description: "Samanyolu'na en yakın spiral dev galaksi"
+  },
+  {
+    id: 'orion',
+    name: "Orion Bulutsusu (M42)",
+    icon: "🌺",
+    category: "dso",
+    type: "fixed",
+    raDeg: 83.82,
+    decDeg: -5.39,
+    description: "Gökyüzünün en parlak yıldız doğumevi bulutsusu"
+  },
+  {
+    id: 'pleiades',
+    name: "Ülker Yıldız Kümesi (M45)",
+    icon: "✨",
+    category: "dso",
+    type: "fixed",
+    raDeg: 56.75,
+    decDeg: 24.11,
+    description: "Yedi Kızkardeş açık kümesi ve mavi yansıma sisi"
+  },
+  {
+    id: 'polaris',
+    name: "Kutup Yıldızı (Polaris)",
+    icon: "⭐",
+    category: "star",
+    type: "fixed",
+    raDeg: 37.95,
+    decDeg: 89.26,
+    description: "Kuzey gök kutbu referansı ve dairesel yıldız izi merkezi"
+  },
+  {
+    id: 'vega',
+    name: "Vega (Çalgı)",
+    icon: "💎",
+    category: "star",
+    type: "fixed",
+    raDeg: 279.23,
+    decDeg: 38.78,
+    description: "Yaz üçgeninin mavi-beyaz kalibrasyon feneri"
+  },
+  {
+    id: 'sirius',
+    name: "Sirius (Akyıldız)",
+    icon: "🌟",
+    category: "star",
+    type: "fixed",
+    raDeg: 101.29,
+    decDeg: -16.72,
+    description: "Gece göğünün görünen en parlak yıldızı"
+  },
+  {
+    id: 'moon',
+    name: "Ay",
+    icon: "🌙",
+    category: "planet",
+    type: "body",
+    bodyName: "Moon",
+    description: "Doğal uydumuz ve ışık kirliliği faktörü"
+  },
+  {
+    id: 'jupiter',
+    name: "Jüpiter",
+    icon: "🪐",
+    category: "planet",
+    type: "body",
+    bodyName: "Jupiter",
+    description: "Dev gaz devi ve Galile uyduları"
+  },
+  {
+    id: 'saturn',
+    name: "Satürn",
+    icon: "🪐",
+    category: "planet",
+    type: "body",
+    bodyName: "Saturn",
+    description: "Halkalı altın gezegen"
+  }
 ];
 
-export function getJulianDate(date: Date): number {
-  let year = date.getUTCFullYear();
-  let month = date.getUTCMonth() + 1;
-  
-  const hoursFraction = (
-    date.getUTCHours() + 
-    date.getUTCMinutes() / 60 + 
-    date.getUTCSeconds() / 3600 + 
-    date.getUTCMilliseconds() / 3600000
-  ) / 24;
+export const getCardinalDirection = (az: number): string => {
+  const dirs = ['K', 'KD', 'D', 'GD', 'G', 'GB', 'B', 'KB'];
+  const normalizedAz = ((az % 360) + 360) % 360;
+  return dirs[Math.round(normalizedAz / 45) % 8];
+};
 
-  const day = date.getUTCDate() + hoursFraction;
-
-  if (month <= 2) {
-    year -= 1;
-    month += 12;
-  }
-
-  const A = Math.floor(year / 100);
-  const B = 2 - A + Math.floor(A / 4);
-  return Math.floor(365.25 * (year + 4716)) + Math.floor(30.6001 * (month + 1)) + day + B - 1524.5;
+function formatTimeOnly(date: Date | null): string {
+  if (!date) return "--:--";
+  return date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
 }
 
-export function getSunCoordinates(jd: number): { dec: number; RA: number; g: number; L: number } {
-  const d = jd - 2451545.0;
-  const g = normalizeAngle(357.529 + 0.98560028 * d);
-  const q = normalizeAngle(280.459 + 0.98564736 * d);
-  const L = normalizeAngle(q + 1.915 * Math.sin(g * RAD) + 0.020 * Math.sin(2 * g * RAD));
-  const obliq = 23.439 - 0.00000036 * d;
-  
-  const dec = Math.asin(Math.sin(obliq * RAD) * Math.sin(L * RAD)) * DEG;
-  const RA = Math.atan2(Math.cos(obliq * RAD) * Math.sin(L * RAD), Math.cos(L * RAD)) * DEG;
+export function getMoonStatus(lat: number, lon: number, date: Date): MoonStatus {
+  const observer = new Astronomy.Observer(lat, lon, 0);
+  const time = new Astronomy.AstroTime(date);
 
-  return { dec, RA, g, L };
-}
+  // Anlık Ay Konumu (Ekvatoryal ve Ufuk)
+  const moonEq = Astronomy.Equator(Astronomy.Body.Moon, time, observer, true, true);
+  const moonHor = Astronomy.Horizon(time, observer, moonEq.ra, moonEq.dec, 'normal');
 
-export function getSunTimeForAltitude(lat: number, lon: number, date: Date, targetAlt: number): string | null {
-  const jd = getJulianDate(date);
-  const coords = getSunCoordinates(jd);
-  
-  const latRad = lat * RAD;
-  const decRad = coords.dec * RAD;
-  const altRad = targetAlt * RAD;
-
-  const cosH = (Math.sin(altRad) - Math.sin(latRad) * Math.sin(decRad)) / (Math.cos(latRad) * Math.cos(decRad));
-
-  if (cosH > 1 || cosH < -1) return null;
-
-  const H = Math.acos(cosH) * DEG;
-  const localNoon = 12 - (lon / 15) - ((coords.L - coords.RA) / 15);
-  const timeInHours = localNoon + (H / 15);
-  
-  const timezoneOffset = -date.getTimezoneOffset() / 60;
-  const localTime = safeMod(timeInHours + timezoneOffset, 24);
-
-  const totalMinutes = Math.round(localTime * 60);
-  const hour = Math.floor((totalMinutes / 60) % 24);
-  const minute = totalMinutes % 60;
-
-  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
-}
-
-export function getMoonStatus(date: Date): MoonStatus {
-  const jd = getJulianDate(date);
-  const synodicMonth = 29.530588853;
-  const knownNewMoon = 2451550.1;
-  
-  const age = safeMod(jd - knownNewMoon, synodicMonth);
-  const cyclePhasePercent = (age / synodicMonth) * 100;
-
-  const phaseRad = (age / synodicMonth) * 2 * Math.PI;
-  const illuminationPercent = Math.round(50 * (1 - Math.cos(phaseRad)));
+  // Aydınlanma ve Evre Açısı (0 - 360 derece)
+  const illum = Astronomy.Illumination(Astronomy.Body.Moon, time);
+  const phaseDeg = Astronomy.MoonPhase(time);
+  const phasePercent = Math.round(illum.phase_fraction * 100);
 
   let phaseName = "";
-  if (cyclePhasePercent < 2.0 || cyclePhasePercent >= 98.0) phaseName = "Yeni Ay 🌑";
-  else if (cyclePhasePercent < 23.0) phaseName = "Hilal 🌒";
-  else if (cyclePhasePercent < 27.0) phaseName = "İlk Dördün 🌓";
-  else if (cyclePhasePercent < 48.0) phaseName = "Şişkin Ay 🌔";
-  else if (cyclePhasePercent < 52.0) phaseName = "Dolunay 🌕";
-  else if (cyclePhasePercent < 73.0) phaseName = "Şişkin Ay 🌖";
-  else if (cyclePhasePercent < 77.0) phaseName = "Son Dördün 🌗";
-  else phaseName = "Hilal 🌘";
+  if (phaseDeg < 15 || phaseDeg >= 345) {
+    phaseName = "Yeni Ay 🌑";
+  } else if (phaseDeg < 75) {
+    phaseName = "Hilal 🌒";
+  } else if (phaseDeg < 105) {
+    phaseName = "İlk Dördün 🌓";
+  } else if (phaseDeg < 165) {
+    phaseName = "Şişkin Ay 🌔";
+  } else if (phaseDeg < 195) {
+    phaseName = "Dolunay 🌕";
+  } else if (phaseDeg < 255) {
+    phaseName = "Şişkin Ay 🌖";
+  } else if (phaseDeg < 285) {
+    phaseName = "Son Dördün 🌗";
+  } else {
+    phaseName = "Hilal 🌘";
+  }
 
-  const isMoonUp = age > 6 && age < 23;
+  // Bugün için Ay Doğuş ve Batış Arama
+  const todayMidnight = new Date(date);
+  todayMidnight.setHours(0, 0, 0, 0);
 
-  return { phaseName, phasePercent: illuminationPercent, isMoonUp, age };
+  let riseTime = "--:--";
+  let setTime = "--:--";
+
+  try {
+    const rise = Astronomy.SearchRiseSet(Astronomy.Body.Moon, observer, +1, todayMidnight, 1.5);
+    const set = Astronomy.SearchRiseSet(Astronomy.Body.Moon, observer, -1, todayMidnight, 1.5);
+    if (rise) riseTime = formatTimeOnly(rise.date);
+    if (set) setTime = formatTimeOnly(set.date);
+  } catch {
+    // Kutup bölgelerinde doğuş/batış olmayabilir
+  }
+
+  return {
+    phaseName,
+    phasePercent,
+    altitude: moonHor.altitude,
+    azimuth: moonHor.azimuth,
+    isMoonUp: moonHor.altitude > 0,
+    riseTime,
+    setTime
+  };
 }
 
-export function estimateBortleOffline(_lat: number, _lon: number, date: Date, baseBortle = 3): BortleOfflineResult {
-  const moon = getMoonStatus(date);
+export function estimateBortleOffline(
+  lat: number,
+  lon: number,
+  date: Date,
+  baseBortle = 3
+): BortleOfflineResult {
+  const moon = getMoonStatus(lat, lon, date);
   let moonImpact = 0;
   let reason = "";
 
-  if (moon.isMoonUp && moon.phasePercent >= 15) {
-    if (moon.phasePercent > 85) {
-      moonImpact = 3;
-      reason = "Dolunay Baskısı";
-    } else if (moon.phasePercent > 50) {
-      moonImpact = 2;
-      reason = "Baskın Ay Işığı";
-    } else if (moon.phasePercent > 20) {
+  if (moon.isMoonUp) {
+    // Ay ufkun üstünde: Yükseklik ve aydınlanma oranına göre ışık etkisi
+    if (moon.phasePercent >= 80) {
+      moonImpact = moon.altitude > 15 ? 3 : 2;
+      reason = "Baskın Dolunay Işığı";
+    } else if (moon.phasePercent >= 40) {
+      moonImpact = moon.altitude > 15 ? 2 : 1;
+      reason = "Aydınlık Ay Işığı";
+    } else if (moon.phasePercent >= 15) {
       moonImpact = 1;
-      reason = "Hafif Ay Etkisi";
+      reason = "Hafif Hilal Işığı";
+    } else {
+      moonImpact = 0;
+      reason = "İnce Hilal (Etkisiz)";
     }
+  } else {
+    moonImpact = 0;
+    reason = "Ay Ufkun Altında (Işık Kirliliği Yok)";
   }
 
   const finalScore = Math.min(9, baseBortle + moonImpact);
 
   if (moonImpact > 0) {
     reason = `${reason} (+${moonImpact} Bortle)`;
-  } else {
-    if (baseBortle <= 2) reason = "Zifiri Karanlık (Yapay Işık Yok)";
-    else if (baseBortle <= 4) reason = "Doğal Kırsal Karanlığı";
-    else if (baseBortle <= 6) reason = "Orta Seviye Şehir Işığı";
+  } else if (!moon.isMoonUp) {
+    if (baseBortle <= 2) reason = "Zifiri Karanlık Gökyüzü (Dağ Başı)";
+    else if (baseBortle <= 4) reason = "Doğal Kırsal Karanlığı (Ay Yok)";
+    else if (baseBortle <= 6) reason = "Şehir Işığı Baskın (Ay Yok)";
     else reason = "Yoğun Şehir Kirliliği";
   }
 
@@ -139,41 +228,96 @@ export function estimateBortleOffline(_lat: number, _lon: number, date: Date, ba
 }
 
 export function getSunTimes(lat: number, lon: number, date: Date): SunTimes {
-  const sunset = getSunTimeForAltitude(lat, lon, date, -0.83);
-  const astroDark = getSunTimeForAltitude(lat, lon, date, -18.0);
+  const observer = new Astronomy.Observer(lat, lon, 0);
+
+  const todayMidnight = new Date(date);
+  todayMidnight.setHours(0, 0, 0, 0);
+
+  let sunsetStr = "--:--";
+  let darkStartStr = "--:--";
+  let darkEndStr = "--:--";
+  let durationText = "Karanlık penceresi hesaplanamadı";
+
+  try {
+    // Güneş batımı (irtifa = -0.8333 derece)
+    const sunset = Astronomy.SearchAltitude(Astronomy.Body.Sun, observer, -1, todayMidnight, 1, -0.8333);
+    if (sunset) {
+      sunsetStr = formatTimeOnly(sunset.date);
+    }
+
+    // Astronomik karanlık başlangıcı (-18 derece altına iniş)
+    const darkStart = Astronomy.SearchAltitude(Astronomy.Body.Sun, observer, -1, todayMidnight, 1, -18.0);
+    if (darkStart) {
+      darkStartStr = formatTimeOnly(darkStart.date);
+
+      // Astronomik karanlık bitişi (-18 dereceden yukarı çıkış / sabah alacakaranlık)
+      const darkEnd = Astronomy.SearchAltitude(Astronomy.Body.Sun, observer, +1, darkStart, 1, -18.0);
+      if (darkEnd) {
+        darkEndStr = formatTimeOnly(darkEnd.date);
+
+        const diffMs = darkEnd.date.getTime() - darkStart.date.getTime();
+        const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+        const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+        durationText = `${diffHrs} sa ${diffMins} dk zifiri karanlık`;
+      }
+    }
+  } catch {
+    sunsetStr = "Kutup Gündüzü";
+    darkStartStr = "Karanlık Yok";
+  }
+
   return {
-    sunset: sunset || "Kutup Gündüzü",
-    astroDark: astroDark || "Karanlık Yok"
+    sunset: sunsetStr,
+    astroDarkStart: darkStartStr,
+    astroDarkEnd: darkEndStr,
+    darkDurationText: durationText
   };
 }
 
-// COĞRAFİ KONUMA GÖRE YÜKSEKLİK VE YÖN HESABI
-export function getCelestialPositions(lat: number, lon: number, date: Date): CelestialPosition[] {
-  const jd = getJulianDate(date);
-  const d = jd - 2451545.0;
-  
-  const gmst = normalizeAngle(280.46061837 + 360.98564736629 * d);
-  const lst = normalizeAngle(gmst + lon);
-  const latRad = lat * RAD;
+export function getCelestialPositions(
+  lat: number,
+  lon: number,
+  date: Date,
+  filter: CelestialCategory = 'all'
+): CelestialPosition[] {
+  const observer = new Astronomy.Observer(lat, lon, 0);
+  const time = new Astronomy.AstroTime(date);
 
-  return CELESTIAL_OBJECTS.map(obj => {
-    const raRad = obj.ra * RAD;
-    const decRad = obj.dec * RAD;
-    const haRad = (lst * RAD) - raRad;
+  const catalog = CELESTIAL_CATALOG.filter(item => {
+    if (filter === 'all') return true;
+    return item.category === filter;
+  });
 
-    const sinAlt = Math.sin(latRad) * Math.sin(decRad) + Math.cos(latRad) * Math.cos(decRad) * Math.cos(haRad);
-    const altRad = Math.asin(sinAlt);
-    const alt = altRad * DEG;
+  const positions = catalog.map(item => {
+    let alt = 0;
+    let az = 0;
 
-    const y = -Math.sin(haRad) * Math.cos(decRad);
-    const x = Math.sin(decRad) - Math.sin(latRad) * sinAlt;
-    const az = safeMod(Math.atan2(y, x) * DEG, 360);
+    if (item.type === 'body' && item.bodyName) {
+      const bodyEnum = Astronomy.Body[item.bodyName];
+      const eq = Astronomy.Equator(bodyEnum, time, observer, true, true);
+      const hor = Astronomy.Horizon(time, observer, eq.ra, eq.dec, 'normal');
+      alt = hor.altitude;
+      az = hor.azimuth;
+    } else if (item.raDeg !== undefined && item.decDeg !== undefined) {
+      // Astronomy.Horizon ra parametresini saat cinsinden (0 - 24) bekler
+      const hor = Astronomy.Horizon(time, observer, item.raDeg / 15, item.decDeg, 'normal');
+      alt = hor.altitude;
+      az = hor.azimuth;
+    }
 
     return {
-      ...obj,
+      ...item,
       alt,
       az,
-      isVisible: alt > 0
+      isVisible: alt > 0,
+      cardinal: getCardinalDirection(az)
     };
+  });
+
+  // Önce ufkun üstündekiler (azalan irtifaya göre), sonra ufkun altındakiler
+  return positions.sort((a, b) => {
+    if (a.isVisible && !b.isVisible) return -1;
+    if (!a.isVisible && b.isVisible) return 1;
+    return b.alt - a.alt;
   });
 }

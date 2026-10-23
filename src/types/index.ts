@@ -7,25 +7,35 @@ export interface SensorGeometry {
   aspectRatio: number;
 }
 
+export type CelestialCategory = 'all' | 'dso' | 'star' | 'planet';
+
 export interface CelestialObject {
   id: string;
   name: string;
-  ra: number;
-  dec: number;
   icon: string;
+  category: 'dso' | 'star' | 'planet';
+  type: 'fixed' | 'body';
+  raDeg?: number;
+  decDeg?: number;
+  bodyName?: 'Moon' | 'Jupiter' | 'Saturn';
+  description?: string;
 }
 
 export interface CelestialPosition extends CelestialObject {
   alt: number;
   az: number;
   isVisible: boolean;
+  cardinal: string;
 }
 
 export interface MoonStatus {
   phaseName: string;
   phasePercent: number;
+  altitude: number;
+  azimuth: number;
   isMoonUp: boolean;
-  age: number;
+  riseTime: string;
+  setTime: string;
 }
 
 export interface BortleOfflineResult {
@@ -35,7 +45,9 @@ export interface BortleOfflineResult {
 
 export interface SunTimes {
   sunset: string;
-  astroDark: string;
+  astroDarkStart: string;
+  astroDarkEnd: string;
+  darkDurationText: string;
 }
 
 export interface ExposureRecipe {
@@ -83,4 +95,5 @@ export interface AppState {
   baseBortle: number;
   bortle: number;
   gpsLocked: boolean;
+  celestialFilter: CelestialCategory;
 }

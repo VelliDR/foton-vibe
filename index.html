@@ -31,14 +31,14 @@
                 <span class="text-[8px] mt-1 font-semibold">Rota</span>
             </button>
         </nav>
-        <div class="text-[9px] text-m3RedMuted/50" id="app-version">v2.0</div>
+        <div class="text-[9px] text-m3RedMuted/50" id="app-version">v2.1</div>
     </aside>
 
     <main class="flex-1 pl-14 min-h-screen flex flex-col">
         <header class="p-4 border-b border-m3Border flex justify-between items-center bg-m3Bg">
             <div>
                 <h1 id="page-title" class="text-sm font-semibold tracking-wider text-m3Red uppercase">GÖSTERGE PANELİ</h1>
-                <p class="text-[10px] text-m3RedMuted/70 font-mono">TypeScript & Vite Build</p>
+                <p class="text-[10px] text-m3RedMuted/70 font-mono">Astronomi Motoru v2</p>
             </div>
             <div class="flex items-center gap-2">
                 <span id="gps-dot" class="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>
@@ -51,8 +51,16 @@
             <section id="tab-dashboard" class="space-y-4">
                 
                 <div class="bg-m3Surface p-4 rounded-2xl border border-m3Border">
-                    <h2 class="text-xs font-semibold uppercase tracking-wider mb-3 text-m3RedMuted">🔭 Kozmik Göstergeler (Alt / Az)</h2>
-                    <div id="celestial-list" class="space-y-2.5">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-3">
+                        <h2 class="text-xs font-semibold uppercase tracking-wider text-m3RedMuted">🔭 Kozmik Göstergeler (Alt / Az)</h2>
+                        <div id="celestial-filters" class="flex flex-wrap gap-1 text-[9px] font-mono">
+                            <button data-filter="all" class="filter-btn px-2 py-0.5 rounded-lg bg-m3RedDark text-m3Red transition-colors">Tümü</button>
+                            <button data-filter="dso" class="filter-btn px-2 py-0.5 rounded-lg bg-m3Bg text-m3RedMuted hover:text-m3Red transition-colors">Derin Uzay</button>
+                            <button data-filter="planet" class="filter-btn px-2 py-0.5 rounded-lg bg-m3Bg text-m3RedMuted hover:text-m3Red transition-colors">Gezegen/Ay</button>
+                            <button data-filter="star" class="filter-btn px-2 py-0.5 rounded-lg bg-m3Bg text-m3RedMuted hover:text-m3Red transition-colors">Yıldız</button>
+                        </div>
+                    </div>
+                    <div id="celestial-list" class="space-y-2 max-h-[340px] overflow-y-auto pr-1">
                         <div class="text-center py-2 text-xs text-m3RedMuted/40 italic">Koordinat hesaplanıyor...</div>
                     </div>
                 </div>
@@ -93,26 +101,28 @@
                 </div>
 
                 <div class="bg-m3Surface p-4 rounded-2xl border border-m3Border">
-                    <h2 class="text-xs font-semibold uppercase tracking-wider mb-3 text-m3RedMuted">🌌 Astronomik Durum</h2>
+                    <h2 class="text-xs font-semibold uppercase tracking-wider mb-3 text-m3RedMuted">🌌 Astronomik Durum & Alacakaranlık</h2>
                     <div class="grid grid-cols-2 gap-3 text-xs font-mono">
                         <div class="border-r border-m3Border pr-2">
                             <span class="text-[10px] block text-m3RedMuted/60">GÜNEŞ BATIMI</span>
                             <span class="text-sm font-semibold" id="sun-set">--:--</span>
                         </div>
                         <div>
-                            <span class="text-[10px] block text-m3RedMuted/60">KARANLIK BAŞLANGIÇ</span>
+                            <span class="text-[10px] block text-m3RedMuted/60">ASTRONOMİK KARANLIK</span>
                             <span class="text-sm font-semibold" id="dark-start">--:--</span>
+                            <span class="text-[9px] block text-emerald-500/90 mt-0.5" id="dark-duration">Hesaplanıyor...</span>
                         </div>
                         <div class="border-r border-m3Border pr-2 pt-2 border-t border-m3Border">
-                            <span class="text-[10px] block text-m3RedMuted/60">AY EVRESİ</span>
+                            <span class="text-[10px] block text-m3RedMuted/60">AY EVRESİ & İRTİFA</span>
                             <span class="text-sm font-semibold" id="moon-phase">Bekleniyor...</span>
+                            <span class="text-[9px] block text-m3RedMuted/70 mt-0.5" id="moon-times">--:-- | --:--</span>
                         </div>
                         <div class="pt-2 border-t border-m3Border">
-                            <span class="text-[10px] block text-m3RedMuted/60">BULUTLULUK</span>
+                            <span class="text-[10px] block text-m3RedMuted/60">CANLI HAVA DURUMU</span>
                             <span class="text-sm font-semibold" id="cloud-status">--</span>
                         </div>
                         <div class="pr-2 pt-2 border-t border-m3Border col-span-2">
-                            <span class="text-[10px] block text-m3RedMuted/60">IŞIK KİRLİLİĞİ (BORTLE)</span>
+                            <span class="text-[10px] block text-m3RedMuted/60">HİBRİT IŞIK KİRLİLİĞİ (BORTLE)</span>
                             <span class="text-sm font-semibold" id="bortle-value">Hesaplanıyor...</span>
                         </div>
                     </div>
